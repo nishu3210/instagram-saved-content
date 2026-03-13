@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>Instagram Intelligence | Digital Persona</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        midnight: '#0f172a',
+                        surface: '#1e293b',
+                        accent: '#7c3aed',
+                        cyan: '#06b6d4',
+                        rose: '#f43f5e'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #a78bfa 0%, #2dd4bf 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        .loader-bar {
+            height: 3px;
+            width: 100%;
+            background: #1e293b;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .loader-bar::after {
+            content: '';
+            position: absolute;
+            left: -50%;
+            height: 100%;
+            width: 50%;
+            background: linear-gradient(90deg, transparent, #7c3aed, transparent);
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% {
+                left: -50%;
+            }
+
+            100% {
+                left: 150%;
+            }
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .toast {
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .toast.success {
+            background: #10b981;
+            color: white;
+        }
+
+        .toast.error {
+            background: #ef4444;
+            color: white;
+        }
+
+        .toast.info {
+            background: #3b82f6;
+            color: white;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body class="antialiased selection:bg-accent selection:text-white">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 glass-panel h-16 flex items-center justify-between px-6 lg:px-12">
+        <div class="flex items-center gap-2">
+            <span class="text-2xl">⚡️</span>
+            <h1 class="font-bold text-lg tracking-tight">SAVED<span class="text-accent">INTELLIGENCE</span></h1>
+        </div>
+        <div class="flex items-center gap-6">
+            <div class="flex gap-6 text-sm font-medium text-slate-400">
+                <button onclick="switchTab('dashboard')" class="nav-item hover:text-white transition-colors text-white"
+                    data-target="dashboard">Dashboard</button>
+                <button onclick="switchTab('gallery')" class="nav-item hover:text-white transition-colors"
+                    data-target="gallery">Gallery</button>
+                <button onclick="switchTab('execution')" class="nav-item hover:text-white transition-colors"
+                    data-target="execution">Execution</button>
+                <button onclick="switchTab('chat')" class="nav-item hover:text-white transition-colors"
+                    data-target="chat">Oracle</button>
+                <button onclick="switchTab('settings')" class="nav-item hover:text-white transition-colors"
+                    data-target="settings">Settings</button>
+            </div>
+            <div id="connectionStatus"
+                class="px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700">
+                Checking...
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-24 pb-12 px-6 lg:px-12 max-w-7xl mx-auto min-h-screen">
+
+        <!-- VIEW: DASHBOARD -->
+        <div id="dashboard-view" class="view-section space-y-8">
+
+            <!-- Hero / Profile -->
+            <div class="glass rounded-3xl p-8 relative overflow-hidden group">
+                <div
+                    class="absolute top-0 right-0 w-96 h-96 bg-accent/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none">
+                </div>
+
+                <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span
+                                class="px-3 py-1 bg-accent/10 border border-accent/20 text-accent rounded-full text-xs font-bold uppercase tracking-wider">Psychometric
+                                Profile</span>
+                            <span id="postsCountBadge" class="text-xs text-slate-400">Loading data...</span>
+                        </div>
+                        <h2 id="userArchetype" class="text-5xl font-black tracking-tight mb-2 text-white">The Unrevealed
+                            Persona</h2>
+                        <p id="userOneLiner" class="text-xl text-slate-400 max-w-2xl">Analyze your data to reveal your
+                            digital subconscious.</p>
+                    </div>
+                    <button onclick="generateProfile()" id="generateProfileBtn"
+                        class="px-6 py-3 bg-white text-midnight font-bold rounded-xl hover:bg-slate-200 transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+                        <span>✨ Generate Profile</span>
+                    </button>
+                </div>
+
+                <div id="traitsGrid" class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8 hidden"></div>
+            </div>
+
+            <!-- Metrics Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass rounded-3xl p-6">
+                    <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-6">Mood Pulse</h3>
+                    <div class="h-48 relative"><canvas id="sentimentChart"></canvas></div>
+                </div>
+                <div class="glass rounded-3xl p-6">
+                    <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-6">Content DNA</h3>
+                    <div class="h-48 relative flex items-center justify-center"><canvas id="categoriesChart"></canvas>
+                    </div>
+                </div>
+                <div class="glass rounded-3xl p-6 flex flex-col justify-between relative overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-transparent pointer-events-none">
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">System Status
+                        </h3>
+                        <div class="flex items-baseline gap-2">
+                            <span id="indexedCountDisplay" class="text-4xl font-bold text-white">0</span>
+                            <span class="text-sm text-slate-500">posts indexed for RAG</span>
+                        </div>
+                    </div>
+                    <div class="mt-6 space-y-3">
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-cyan-400">Analyzed</span>
+                            <span id="analyzedCountDisplay" class="font-bold text-white">0</span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                            <div id="indexBar" class="bg-cyan-400 h-full rounded-full w-0 transition-all duration-1000">
+                            </div>
+                        </div>
+                        <button onclick="rebuildRAG()"
+                            class="w-full mt-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs rounded-lg font-medium transition-colors border border-slate-700">
+                            🧠 Rebuild RAG Index
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: GALLERY -->
+        <div id="gallery-view" class="view-section hidden space-y-6">
+            <!-- Filter Bar -->
+            <div class="flex flex-col md:flex-row justify-between gap-4 glass p-4 rounded-2xl sticky top-20 z-40">
+                <div class="flex gap-4 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
+                    <select id="sortFilter" onchange="loadPosts(1)"
+                        class="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg px-4 py-2">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                    </select>
+                    <select id="categoryFilter" onchange="loadPosts(1)"
+                        class="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg px-4 py-2">
+                        <option value="all">All Categories</option>
+                    </select>
+                    <select id="sentimentFilter" onchange="loadPosts(1)"
+                        class="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg px-4 py-2">
+                        <option value="all">All Sentiments</option>
+                        <option value="Positive">Positive</option>
+                        <option value="Neutral">Neutral</option>
+                        <option value="Negative">Negative</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="syncLibrary()"
+                        class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm rounded-lg font-medium transition-colors">🔄
+                        Sync</button>
+                    <button onclick="analyzeBatch()"
+                        class="px-4 py-2 bg-accent hover:bg-accent/90 text-white text-sm rounded-lg font-medium transition-colors">✨
+                        Analyze</button>
+                </div>
+            </div>
+
+            <!-- Grid -->
+            <div id="postsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+            <!-- Pagination -->
+            <div class="flex justify-center items-center gap-4 py-8">
+                <button onclick="changePage(-1)" id="prevPageBtn" disabled
+                    class="px-4 py-2 bg-slate-800 text-white rounded-lg disabled:opacity-50">← Prev</button>
+                <span id="pageInfo" class="text-slate-400 text-sm">Page 1 of 1</span>
+                <button onclick="changePage(1)" id="nextPageBtn" disabled
+                    class="px-4 py-2 bg-slate-800 text-white rounded-lg disabled:opacity-50">Next →</button>
+            </div>
+        </div>
+
+        <!-- VIEW: EXECUTION -->
+        <div id="execution-view" class="view-section hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="glass rounded-2xl p-5">
+                    <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Open Tasks</p>
+                    <p id="taskOpenCount" class="text-3xl font-bold text-white">0</p>
+                </div>
+                <div class="glass rounded-2xl p-5">
+                    <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Due Today</p>
+                    <p id="taskDueTodayCount" class="text-3xl font-bold text-cyan-400">0</p>
+                </div>
+                <div class="glass rounded-2xl p-5">
+                    <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Overdue</p>
+                    <p id="taskOverdueCount" class="text-3xl font-bold text-rose-400">0</p>
+                </div>
+                <div class="glass rounded-2xl p-5">
+                    <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">7d Completion</p>
+                    <p id="taskCompletionRate" class="text-3xl font-bold text-emerald-400">0%</p>
+                </div>
+            </div>
+
+            <div class="glass rounded-2xl p-6 space-y-4">
+                <div class="flex flex-col md:flex-row justify-between gap-3">
+                    <div>
+                        <h3 class="text-lg font-bold text-white">Today’s Execution Plan</h3>
+                        <p class="text-sm text-slate-400">Top priorities to complete next.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="bootstrapTasks()"
+                            class="px-4 py-2 bg-accent hover:bg-accent/90 text-white text-sm rounded-lg font-medium transition-colors">Generate
+                            Tasks</button>
+                        <button onclick="loadTodayPlan()"
+                            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm rounded-lg font-medium transition-colors">Refresh
+                            Plan</button>
+                    </div>
+                </div>
+                <div id="todayPlanList" class="space-y-3"></div>
+            </div>
+
+            <div class="glass rounded-2xl p-6">
+                <h3 class="text-lg font-bold text-white mb-4">Add Manual Task</h3>
+                <form id="addTaskForm" class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                    <input id="newTaskTitle" type="text" required
+                        class="md:col-span-3 bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white"
+                        placeholder="Define the next concrete action...">
+                    <input id="newTaskDueDate" type="date"
+                        class="bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white">
+                    <button type="submit"
+                        class="bg-white text-midnight rounded-lg px-4 py-3 font-bold hover:bg-slate-200 transition-colors">Add</button>
+                </form>
+            </div>
+
+            <div class="glass rounded-2xl p-6 space-y-4">
+                <div class="flex flex-col md:flex-row justify-between gap-3">
+                    <h3 class="text-lg font-bold text-white">Task Inbox</h3>
+                    <div class="flex gap-2">
+                        <select id="taskStatusFilter" onchange="loadTasks(1)"
+                            class="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg px-3 py-2">
+                            <option value="all">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="done">Done</option>
+                        </select>
+                        <select id="taskDueFilter" onchange="loadTasks(1)"
+                            class="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg px-3 py-2">
+                            <option value="all">Any Due Date</option>
+                            <option value="today">Due Today</option>
+                            <option value="overdue">Overdue</option>
+                            <option value="week">Due This Week</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="tasksList" class="space-y-3"></div>
+                <div class="flex justify-center items-center gap-3">
+                    <button onclick="changeTaskPage(-1)" id="prevTaskPageBtn" disabled
+                        class="px-3 py-2 bg-slate-800 text-white rounded-lg disabled:opacity-50">← Prev</button>
+                    <span id="taskPageInfo" class="text-sm text-slate-400">Page 1 of 1</span>
+                    <button onclick="changeTaskPage(1)" id="nextTaskPageBtn" disabled
+                        class="px-3 py-2 bg-slate-800 text-white rounded-lg disabled:opacity-50">Next →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: CHAT -->
+        <div id="chat-view" class="view-section hidden h-[calc(100vh-8rem)]">
+            <div class="glass h-full rounded-3xl overflow-hidden flex flex-col relative">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent to-cyan-400"></div>
+                <div id="chatMessages" class="flex-1 overflow-y-auto p-6 space-y-6">
+                    <div class="flex justify-start">
+                        <div class="max-w-[80%] bg-slate-800 rounded-2xl rounded-tl-none p-4 text-slate-300">
+                            <p>I am Oracle. I have read your saved content. Ask me anything.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6 bg-slate-900/50 border-t border-white/5">
+                    <form id="chatForm" class="flex gap-4">
+                        <input type="text" id="chatInput"
+                            class="flex-1 bg-slate-800 border-none rounded-xl px-4 py-4 text-white focus:ring-2 focus:ring-accent placeholder-slate-500"
+                            placeholder="e.g. What are the best travel spots I saved?">
+                        <button type="submit"
+                            class="bg-accent hover:bg-accent/90 text-white rounded-xl px-6 font-bold transition-all shadow-lg shadow-accent/20">Send</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: SETTINGS -->
+        <div id="settings-view" class="view-section hidden">
+            <div class="max-w-2xl mx-auto space-y-6">
+                <!-- Instagram Credentials -->
+                <div class="glass p-8 rounded-3xl">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">📷 Instagram Connection</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Session ID</label>
+                            <div class="flex gap-2">
+                                <input type="password" id="sessionid"
+                                    class="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-accent focus:outline-none"
+                                    placeholder="Enter sessionid cookie">
+                                <select id="browserSelect"
+                                    class="bg-slate-900 border border-slate-700 rounded-lg px-3 text-white">
+                                    <option value="chrome">Chrome</option>
+                                    <option value="firefox">Firefox</option>
+                                    <option value="safari">Safari</option>
+                                    <option value="all">Scan All</option>
+                                </select>
+                                <button onclick="autoFillFromBrowser()"
+                                    class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors whitespace-nowrap">🔑
+                                    Auto-fill</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Raw Cookie
+                                (Optional)</label>
+                            <input type="text" id="raw_cookie"
+                                class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"
+                                placeholder="Full cookie string if auto-fill fails">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-2">User Agent</label>
+                            <input type="text" id="user_agent"
+                                class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"
+                                placeholder="Browser User Agent">
+                        </div>
+                        <button onclick="testCredentials()"
+                            class="w-full py-3 bg-white text-midnight font-bold rounded-xl hover:bg-slate-200 transition-all">🧪
+                            Test Connection</button>
+                    </div>
+                </div>
+
+                <!-- Azure Config -->
+                <div class="glass p-8 rounded-3xl">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">🤖 Azure OpenAI Config</h2>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Endpoint</label>
+                                <input type="text" id="azure_endpoint"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-2">API Key</label>
+                                <input type="password" id="azure_key"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Model
+                                Deployment</label>
+                            <input type="text" id="model" value="DeepSeek-V3.2"
+                                class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export -->
+                <div class="glass p-8 rounded-3xl">
+                    <h2 class="text-xl font-bold mb-4">📤 Export Data</h2>
+                    <p class="text-slate-400 text-sm mb-4">Download your analysis as a Markdown file.</p>
+                    <button onclick="exportData()"
+                        class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all">Download
+                        Report</button>
+                </div>
+
+                <div class="glass p-8 rounded-3xl">
+                    <h2 class="text-xl font-bold mb-4">🛠 Data Maintenance</h2>
+                    <p class="text-slate-400 text-sm mb-4">Fix legacy encoded analysis fields after old runs.</p>
+                    <button onclick="normalizeAnalysisData()"
+                        class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all">Normalize
+                        Analysis Data</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Progress Modal -->
+    <div id="progressModal" class="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center hidden">
+        <div class="glass p-8 rounded-3xl w-96 text-center">
+            <h3 class="text-xl font-bold mb-4">Processing...</h3>
+            <div class="loader-bar rounded-full mb-4"></div>
+            <p id="progressMessage" class="text-accent font-mono text-sm">Initializing...</p>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script>
+        const API_BASE = '/api';
+        let currentPage = 1;
+        let totalPages = 1;
+        let taskCurrentPage = 1;
+        let taskTotalPages = 1;
+        let conversationId = null;
+        let charts = {};
+
+        // --- Navigation ---
+        function switchTab(viewId) {
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.toggle('text-white', el.dataset.target === viewId);
+                el.classList.toggle('text-slate-400', el.dataset.target !== viewId);
+            });
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`${viewId}-view`).classList.remove('hidden');
+
+            if (viewId === 'gallery') loadPosts(1);
+            if (viewId === 'execution') {
+                loadTaskStats();
+                loadTodayPlan();
+                loadTasks(1);
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // --- Toast ---
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<span>${escapeHtml(message)}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.animation = 'slideOut 0.3s'; setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        // --- Init ---
+        async function init() {
+            await loadConfig();
+            await loadStats();
+            await loadTaskStats();
+            await loadTodayPlan();
+            await loadTasks(1);
+            pollStatus();
+        }
+
+        async function loadConfig() {
+            try {
+                const res = await fetch(`${API_BASE}/config`);
+                const data = await res.json();
+                if (data.azure_endpoint) document.getElementById('azure_endpoint').value = data.azure_endpoint;
+                if (data.has_azure_key && !document.getElementById('azure_key').value) {
+                    document.getElementById('azure_key').placeholder = 'Using server-side environment key';
+                }
+            } catch (e) { console.log('Config load failed'); }
+        }
+
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API_BASE}/stats`);
+                const stats = await res.json();
+
+                document.getElementById('postsCountBadge').textContent = `${stats.total_posts} POSTS SAVED`;
+                document.getElementById('indexedCountDisplay').textContent = stats.embedded_count || 0;
+                document.getElementById('analyzedCountDisplay').textContent = stats.analyzed_count || 0;
+
+                const pct = stats.total_posts > 0 ? (stats.analyzed_count / stats.total_posts) * 100 : 0;
+                document.getElementById('indexBar').style.width = `${pct}%`;
+
+                initCharts(stats);
+                renderFilters(stats.categories);
+            } catch (e) { console.log('Stats load failed', e); }
+        }
+
+        function initCharts(stats) {
+            if (charts.sent) charts.sent.destroy();
+            if (charts.cat) charts.cat.destroy();
+
+            const ctxSent = document.getElementById('sentimentChart');
+            charts.sent = new Chart(ctxSent, {
+                type: 'bar',
+                data: {
+                    labels: ['Negative', 'Neutral', 'Positive'],
+                    datasets: [{
+                        data: [stats.sentiments?.Negative || 0, stats.sentiments?.Neutral || 0, stats.sentiments?.Positive || 0],
+                        backgroundColor: ['#f43f5e', '#94a3b8', '#10b981'],
+                        borderRadius: 8, barThickness: 40
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#64748b' } } } }
+            });
+
+            const ctxCat = document.getElementById('categoriesChart');
+            charts.cat = new Chart(ctxCat, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(stats.categories || {}),
+                    datasets: [{ data: Object.values(stats.categories || {}), backgroundColor: ['#7c3aed', '#06b6d4', '#f472b6', '#3b82f6', '#10b981', '#f59e0b'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '70%' }
+            });
+        }
+
+        function renderFilters(categories) {
+            const sel = document.getElementById('categoryFilter');
+            sel.innerHTML = '<option value="all">All Categories</option>';
+            Object.keys(categories || {}).forEach(cat => { sel.innerHTML += `<option value="${cat}">${cat}</option>`; });
+        }
+
+        // --- Gallery ---
+        async function loadPosts(page = 1) {
+            try {
+                const sort = document.getElementById('sortFilter').value;
+                const cat = document.getElementById('categoryFilter').value;
+                const sent = document.getElementById('sentimentFilter').value;
+
+                const res = await fetch(`${API_BASE}/posts?page=${page}&per_page=50&sort=${sort}&category=${cat}&sentiment=${sent}`);
+                const data = await res.json();
+
+                currentPage = data.current_page || 1;
+                totalPages = data.pages || 1;
+                updatePagination();
+                renderGallery(data.posts || []);
+            } catch (e) { console.log('Posts load failed', e); }
+        }
+
+        function updatePagination() {
+            document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+            document.getElementById('prevPageBtn').disabled = currentPage <= 1;
+            document.getElementById('nextPageBtn').disabled = currentPage >= totalPages;
+        }
+
+        function changePage(delta) {
+            const newPage = currentPage + delta;
+            if (newPage >= 1 && newPage <= totalPages) loadPosts(newPage);
+        }
+
+        function renderGallery(posts) {
+            const grid = document.getElementById('postsGrid');
+            grid.innerHTML = posts.map(p => {
+                const analysis = p.analysis || {};
+                const sentimentLabel = analysis.sentiment?.label || analysis.sentiment_label || '';
+                const category = analysis.category || 'Uncategorized';
+                const username = escapeHtml(p.username || 'unknown');
+                const caption = escapeHtml((p.caption || '').substring(0, 100));
+                const shortcode = escapeHtml(p.shortcode || '');
+                const proxyImage = p.thumbnail_url
+                    ? `${API_BASE}/media-proxy?shortcode=${encodeURIComponent(p.shortcode || '')}&url=${encodeURIComponent(p.thumbnail_url)}`
+                    : '';
+                return `
+                <div class="glass rounded-2xl overflow-hidden hover:translate-y-[-5px] transition-transform duration-300 group cursor-pointer" onclick="window.open('https://www.instagram.com/p/${shortcode}', '_blank')">
+                    <div class="relative h-48 bg-slate-800">
+                        ${proxyImage ? `<img src="${proxyImage}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=No+Image'">` : '<div class="w-full h-full flex items-center justify-center text-slate-600">No Image</div>'}
+                        <div class="absolute top-3 right-3">
+                             <span class="px-2 py-1 bg-black/60 backdrop-blur-md rounded text-xs font-bold text-white">${escapeHtml(category)}</span>
+                        </div>
+                        <div class="absolute bottom-3 left-3 flex gap-2 text-xs text-white/80">
+                            <span>❤️ ${p.likes || 0}</span>
+                            <span>💬 ${p.comments || 0}</span>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <div class="flex justify-between items-center mb-2">
+                             <span class="text-xs text-slate-400 font-mono">@${username}</span>
+                             <span class="text-xs font-bold ${sentimentLabel === 'Positive' ? 'text-green-400' : 'text-slate-400'}">${escapeHtml(sentimentLabel)}</span>
+                        </div>
+                        <p class="text-sm text-slate-300 line-clamp-2 font-light">${caption}...</p>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        // --- Actions ---
+        async function autoFillFromBrowser() {
+            try {
+                showToast('Scanning browser cookies...', 'info');
+                document.getElementById('raw_cookie').value = '';
+                const browser = document.getElementById('browserSelect').value;
+                const res = await fetch(`${API_BASE}/auth/browser-cookies`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ browser })
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                document.getElementById('sessionid').value = data.sessionid;
+                document.getElementById('raw_cookie').value = data.raw_cookie || '';
+                if (data.user_agent) document.getElementById('user_agent').value = data.user_agent;
+                showToast('Cookies loaded from ' + data.browser, 'success');
+            } catch (e) { showToast('Failed: ' + e.message, 'error'); }
+        }
+
+        async function testCredentials() {
+            const sessionid = document.getElementById('sessionid').value;
+            if (!sessionid) return showToast('Enter Session ID first', 'error');
+            try {
+                showToast('Testing connection...', 'info');
+                const res = await fetch(`${API_BASE}/test-connection`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionid, raw_cookie: document.getElementById('raw_cookie').value,
+                        browser: document.getElementById('browserSelect').value,
+                        user_agent: document.getElementById('user_agent').value
+                    })
+                });
+                const data = await res.json();
+                if (data.success) showToast(data.message || 'Instagram connection successful', 'success');
+                else showToast('Failed: ' + data.error, 'error');
+            } catch (e) { showToast('Test failed: ' + e.message, 'error'); }
+        }
+
+        async function syncLibrary() {
+            const sessionid = document.getElementById('sessionid').value;
+            if (!sessionid) return showToast('Set Session ID in Settings', 'error');
+            try {
+                await fetch(`${API_BASE}/fetch-posts`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionid,
+                        raw_cookie: document.getElementById('raw_cookie').value,
+                        user_agent: document.getElementById('user_agent').value,
+                        browser: document.getElementById('browserSelect').value
+                    })
+                });
+                document.getElementById('progressModal').classList.remove('hidden');
+                pollProgress();
+            } catch (e) { showToast('Sync failed: ' + e.message, 'error'); }
+        }
+
+        async function analyzeBatch() {
+            try {
+                await fetch(`${API_BASE}/analyze-batch`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        batch_size: 1000,
+                        azure_endpoint: document.getElementById('azure_endpoint').value,
+                        azure_key: document.getElementById('azure_key').value,
+                        model: document.getElementById('model').value
+                    })
+                });
+                document.getElementById('progressModal').classList.remove('hidden');
+                pollProgress();
+            } catch (e) { showToast('Analysis failed: ' + e.message, 'error'); }
+        }
+
+        async function pollProgress() {
+            const interval = setInterval(async () => {
+                const res = await fetch(`${API_BASE}/status`);
+                const data = await res.json();
+                document.getElementById('progressMessage').textContent = data.message;
+                if (data.progress >= 100 || data.error || !data.running) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        document.getElementById('progressModal').classList.add('hidden');
+                        if (!data.error) { loadStats(); loadPosts(1); loadTaskStats(); showToast('Complete!', 'success'); }
+                        else showToast('Error: ' + data.error, 'error');
+                    }, 1000);
+                }
+            }, 1000);
+        }
+
+        function pollStatus() {
+            setInterval(async () => {
+                try {
+                    const res = await fetch(`${API_BASE}/status`);
+                    const data = await res.json();
+                    const el = document.getElementById('connectionStatus');
+                    if (data.running) {
+                        el.textContent = `Working... ${data.progress}%`;
+                        el.className = 'px-3 py-1 rounded-full text-xs font-bold bg-accent/20 text-accent border border-accent/30';
+                    } else {
+                        el.textContent = 'Ready';
+                        el.className = 'px-3 py-1 rounded-full text-xs font-bold bg-green-500/20 text-green-400 border border-green-500/30';
+                    }
+                } catch (e) { }
+            }, 5000);
+        }
+
+        // --- Psychometric Profile ---
+        async function generateProfile() {
+            const btn = document.getElementById('generateProfileBtn');
+            btn.innerHTML = '<span>🔮 Divining...</span>'; btn.disabled = true;
+            try {
+                const res = await fetch(`${API_BASE}/profile`);
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                document.getElementById('userArchetype').textContent = data.archetype;
+                document.getElementById('userArchetype').className = 'text-5xl font-black tracking-tight mb-2 text-transparent bg-clip-text bg-gradient-to-r from-accent to-cyan-400';
+                document.getElementById('userOneLiner').textContent = `"${data.one_liner}"`;
+                const grid = document.getElementById('traitsGrid');
+                grid.innerHTML = data.traits.map(t => `<div class="bg-slate-800/50 p-4 rounded-xl border border-white/5 text-center"><span class="block text-accent text-lg mb-1">✦</span><span class="font-bold text-sm">${t}</span></div>`).join('');
+                grid.classList.remove('hidden');
+            } catch (e) { showToast('Profile failed: ' + e.message, 'error'); }
+            finally { btn.innerHTML = '<span>✨ Regenerate</span>'; btn.disabled = false; }
+        }
+
+        // --- Chat ---
+        document.getElementById('chatForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            const msgs = document.getElementById('chatMessages');
+            const q = input.value.trim(); if (!q) return;
+            msgs.innerHTML += `<div class="flex justify-end"><div class="max-w-[80%] bg-accent text-white p-4 rounded-2xl rounded-tr-none shadow-lg">${escapeHtml(q)}</div></div>`;
+            input.value = ''; msgs.scrollTop = msgs.scrollHeight;
+            try {
+                const res = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: q, conversation_id: conversationId })
+                });
+                const data = await res.json();
+                if (data.conversation_id) {
+                    conversationId = data.conversation_id;
+                }
+                const formatted = formatChatMessage(data.answer || data.error);
+                msgs.innerHTML += `<div class="flex justify-start"><div class="max-w-[80%] bg-slate-800 text-slate-200 p-4 rounded-2xl rounded-tl-none border border-white/5">${formatted}</div></div>`;
+                msgs.scrollTop = msgs.scrollHeight;
+            } catch (e) { msgs.innerHTML += `<div class="text-rose-500 text-center text-xs mt-4">Connection Failed</div>`; }
+        });
+
+        function formatChatMessage(text) {
+            // Convert markdown-like formatting to HTML
+            return escapeHtml(text)
+                .replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold text-white">$1</strong>') // Bold
+                .replace(/^(\d+\.)\s+(.+)$/gm, '<div class="flex gap-3 mb-2"><span class="text-accent font-bold">$1</span><span>$2</span></div>') // Numbered lists
+                .replace(/^-\s+(.+)$/gm, '<div class="flex gap-2 ml-6 mb-1"><span class="text-cyan-400">•</span><span class="text-slate-300">$1</span></div>') // Bullet points
+                .replace(/\n\n/g, '<div class="h-3"></div>') // Double line breaks = spacing
+                .replace(/\n/g, '<br>'); // Single line breaks
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return 'No due date';
+            const dt = new Date(dateStr);
+            if (Number.isNaN(dt.getTime())) return 'No due date';
+            return dt.toLocaleDateString();
+        }
+
+        async function loadTaskStats() {
+            try {
+                const res = await fetch(`${API_BASE}/tasks/stats`);
+                const stats = await res.json();
+                if (stats.error) return;
+                document.getElementById('taskOpenCount').textContent = stats.open || 0;
+                document.getElementById('taskDueTodayCount').textContent = stats.due_today || 0;
+                document.getElementById('taskOverdueCount').textContent = stats.overdue || 0;
+                document.getElementById('taskCompletionRate').textContent = `${stats.completion_rate_7d || 0}%`;
+            } catch (e) {
+                console.log('Task stats load failed', e);
+            }
+        }
+
+        async function loadTodayPlan() {
+            try {
+                const res = await fetch(`${API_BASE}/tasks/today-plan?max_items=3`);
+                const data = await res.json();
+                const planList = document.getElementById('todayPlanList');
+                const plan = data.plan || [];
+                if (!plan.length) {
+                    planList.innerHTML = '<div class="text-sm text-slate-400">No open tasks. Generate tasks from analysis or add one manually.</div>';
+                    return;
+                }
+
+                planList.innerHTML = plan.map((task, idx) => `
+                    <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-700 flex items-start justify-between gap-4">
+                        <div>
+                            <p class="text-xs text-slate-500 mb-1">Priority ${idx + 1} • ${escapeHtml(task.status)}</p>
+                            <p class="text-white font-medium">${escapeHtml(task.title)}</p>
+                            <p class="text-xs text-slate-400 mt-1">Due: ${escapeHtml(formatDate(task.due_date))}</p>
+                        </div>
+                        <button onclick="updateTaskStatus(${task.id}, 'done')"
+                            class="px-3 py-2 bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs rounded-lg">Mark Done</button>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.log('Today plan failed', e);
+            }
+        }
+
+        async function loadTasks(page = 1) {
+            try {
+                const status = document.getElementById('taskStatusFilter').value;
+                const due = document.getElementById('taskDueFilter').value;
+                const res = await fetch(`${API_BASE}/tasks?page=${page}&per_page=20&status=${status}&due=${due}`);
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                taskCurrentPage = data.current_page || 1;
+                taskTotalPages = data.pages || 1;
+                updateTaskPagination();
+                renderTasks(data.tasks || []);
+            } catch (e) {
+                console.log('Task load failed', e);
+            }
+        }
+
+        function renderTasks(tasks) {
+            const list = document.getElementById('tasksList');
+            if (!tasks.length) {
+                list.innerHTML = '<div class="text-sm text-slate-400">No tasks in this filter.</div>';
+                return;
+            }
+
+            const now = new Date();
+            list.innerHTML = tasks.map(task => {
+                const due = task.due_date ? new Date(task.due_date) : null;
+                const overdue = due && due < now && !['done', 'archived'].includes(task.status);
+                return `
+                    <div class="p-4 rounded-xl bg-slate-900/60 border ${overdue ? 'border-rose-500/50' : 'border-slate-700'}">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="space-y-1">
+                                <p class="text-white font-medium">${escapeHtml(task.title)}</p>
+                                <p class="text-xs text-slate-400">Due: ${escapeHtml(formatDate(task.due_date))}</p>
+                                ${task.notes ? `<p class="text-xs text-slate-500">${escapeHtml(task.notes)}</p>` : ''}
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <select onchange="updateTaskStatus(${task.id}, this.value)"
+                                    class="bg-slate-800 border border-slate-600 text-white text-xs rounded px-2 py-1">
+                                    <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                    <option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                                    <option value="done" ${task.status === 'done' ? 'selected' : ''}>Done</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateTaskPagination() {
+            document.getElementById('taskPageInfo').textContent = `Page ${taskCurrentPage} of ${taskTotalPages}`;
+            document.getElementById('prevTaskPageBtn').disabled = taskCurrentPage <= 1;
+            document.getElementById('nextTaskPageBtn').disabled = taskCurrentPage >= taskTotalPages;
+        }
+
+        function changeTaskPage(delta) {
+            const newPage = taskCurrentPage + delta;
+            if (newPage >= 1 && newPage <= taskTotalPages) {
+                loadTasks(newPage);
+            }
+        }
+
+        async function updateTaskStatus(taskId, status) {
+            try {
+                const res = await fetch(`${API_BASE}/tasks/${taskId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                await loadTaskStats();
+                await loadTodayPlan();
+                await loadTasks(taskCurrentPage);
+            } catch (e) {
+                showToast('Task update failed: ' + e.message, 'error');
+            }
+        }
+
+        async function bootstrapTasks() {
+            try {
+                const res = await fetch(`${API_BASE}/tasks/bootstrap`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ limit: 120, due_days: 7 })
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                document.getElementById('progressModal').classList.remove('hidden');
+                document.getElementById('progressMessage').textContent = data.message || 'Starting task generation...';
+                pollTaskBootstrap();
+            } catch (e) {
+                showToast('Task generation failed: ' + e.message, 'error');
+            }
+        }
+
+        async function pollTaskBootstrap() {
+            const interval = setInterval(async () => {
+                try {
+                    const res = await fetch(`${API_BASE}/tasks/status`);
+                    const data = await res.json();
+                    document.getElementById('progressMessage').textContent = data.message || 'Working...';
+
+                    if (!data.running || data.error || (data.progress || 0) >= 100) {
+                        clearInterval(interval);
+                        setTimeout(async () => {
+                            document.getElementById('progressModal').classList.add('hidden');
+                            if (data.error) {
+                                showToast('Task generation failed: ' + data.error, 'error');
+                                return;
+                            }
+
+                            const created = data.results?.created_count ?? 0;
+                            showToast(`Created ${created} tasks`, 'success');
+                            await loadTaskStats();
+                            await loadTodayPlan();
+                            await loadTasks(1);
+                        }, 800);
+                    }
+                } catch (e) {
+                    clearInterval(interval);
+                    document.getElementById('progressModal').classList.add('hidden');
+                    showToast('Task generation polling failed', 'error');
+                }
+            }, 1000);
+        }
+
+        const addTaskForm = document.getElementById('addTaskForm');
+        if (addTaskForm) {
+            addTaskForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const title = document.getElementById('newTaskTitle').value.trim();
+                const dueDate = document.getElementById('newTaskDueDate').value;
+                if (!title) return;
+
+                const dueDateIso = dueDate ? new Date(`${dueDate}T18:00:00`).toISOString() : null;
+                try {
+                    const res = await fetch(`${API_BASE}/tasks`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            title,
+                            due_date: dueDateIso,
+                            priority: 2,
+                            source: 'manual'
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.error) throw new Error(data.error);
+                    document.getElementById('newTaskTitle').value = '';
+                    document.getElementById('newTaskDueDate').value = '';
+                    showToast('Task added', 'success');
+                    await loadTaskStats();
+                    await loadTodayPlan();
+                    await loadTasks(1);
+                } catch (e) {
+                    showToast('Add task failed: ' + e.message, 'error');
+                }
+            });
+        }
+
+        function exportData() { window.location.href = `${API_BASE}/export`; showToast('Export started...', 'info'); }
+
+        async function normalizeAnalysisData() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/normalize-analysis`, { method: 'POST' });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                showToast(`Normalized ${data.updated_rows} of ${data.total_rows} rows`, 'success');
+                await loadStats();
+            } catch (e) {
+                showToast('Normalization failed: ' + e.message, 'error');
+            }
+        }
+
+        async function rebuildRAG() {
+            try {
+                showToast('Rebuilding RAG index...', 'info');
+                const res = await fetch(`${API_BASE}/rebuild-rag`, { method: 'POST' });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                showToast(`✅ Indexed ${data.indexed_count} posts`, 'success');
+                loadStats(); // Refresh to show new count
+            } catch (e) { showToast('Failed: ' + e.message, 'error'); }
+        }
+
+        // Init
+        init();
+    </script>
+</body>
+
+</html>
