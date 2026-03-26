@@ -8,8 +8,11 @@ from typing import Optional
 
 from dotenv import load_dotenv  # type: ignore
 
+# Project root directory
+project_root = Path(__file__).parent.absolute()
+
 # Load environment variables
-env_path = Path(__file__).parent / ".env"
+env_path = project_root / ".env"
 if env_path.exists():
     load_dotenv(env_path)
 
@@ -80,12 +83,18 @@ class EmbeddingConfig:
 class DatabaseConfig:
     """Database configuration."""
 
-    url: str = "sqlite:///output/instagram_analyzer.db"
+    url: str = field(
+        default_factory=lambda: f"sqlite:///{project_root / 'output' / 'instagram_analyzer.db'}"
+    )
 
     @classmethod
     def from_env(cls) -> "DatabaseConfig":
         """Create config from environment variables."""
-        return cls(url=os.getenv("DATABASE_URL", cls.url))
+        url = os.getenv("DATABASE_URL")
+        if url:
+            return cls(url=url)
+        # Use absolute path
+        return cls(url=f"sqlite:///{project_root / 'output' / 'instagram_analyzer.db'}")
 
 
 @dataclass
@@ -98,8 +107,9 @@ class AppConfig:
     secret_key: str = field(
         default_factory=lambda: os.getenv("SECRET_KEY", secrets.token_hex(32))
     )
-    max_posts: int = 20
-    output_dir: Path = field(default_factory=lambda: Path("output"))
+    max_posts: int = 200
+    output_dir: Path = field(default_factory=lambda: project_root / "output")
+    rate_limit_storage_uri: str = "memory://"
 
     @classmethod
     def from_env(cls) -> "AppConfig":
@@ -108,7 +118,8 @@ class AppConfig:
             debug=os.getenv("FLASK_DEBUG", "0") == "1",
             port=int(os.getenv("FLASK_PORT", "5001")),
             host=os.getenv("FLASK_HOST", "127.0.0.1"),
-            max_posts=int(os.getenv("MAX_POSTS", "20")),
+            max_posts=int(os.getenv("MAX_POSTS", "200")),
+            rate_limit_storage_uri=os.getenv("RATE_LIMIT_STORAGE_URI", "memory://"),
         )
 
 

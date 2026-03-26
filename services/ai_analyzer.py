@@ -25,22 +25,31 @@ class AnalysisError(Exception):
 class AIAnalyzer:
     """AI-powered content analyzer."""
 
-    def __init__(self):
+    def __init__(
+        self,
+        azure_endpoint: Optional[str] = None,
+        azure_key: Optional[str] = None,
+        model: Optional[str] = None,
+        api_version: Optional[str] = None,
+    ):
         self.client: Optional[AzureOpenAI] = None
-        self.model = config.azure.model
+        self.azure_endpoint = azure_endpoint or config.azure.endpoint
+        self.azure_key = azure_key or config.azure.api_key
+        self.api_version = api_version or config.azure.api_version
+        self.model = model or config.azure.model
         self._init_client()
 
     def _init_client(self) -> None:
         """Initialize Azure OpenAI client."""
-        if not config.azure.is_configured():
+        if not (self.azure_endpoint and self.azure_key):
             logger.warning("Azure credentials not configured")
             return
 
         try:
             self.client = AzureOpenAI(
-                api_key=config.azure.api_key,
-                api_version=config.azure.api_version,
-                azure_endpoint=config.azure.endpoint,
+                api_key=self.azure_key,
+                api_version=self.api_version,
+                azure_endpoint=self.azure_endpoint,
             )
             logger.info("Azure OpenAI client initialized")
         except Exception as e:
@@ -49,6 +58,21 @@ class AIAnalyzer:
     def is_available(self) -> bool:
         """Check if analyzer is available."""
         return self.client is not None
+
+    def validate_chat_deployment(self) -> Tuple[bool, str]:
+        """Validate that the configured chat deployment exists and is callable."""
+        if not self.client:
+            return False, "Azure OpenAI client not available"
+
+        try:
+            self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": "ping"}],
+                max_completion_tokens=8,
+            )
+            return True, "Azure deployment is valid"
+        except Exception as e:
+            return False, str(e)
 
     def download_media(self, url: str, suffix: str = ".mp4") -> Optional[str]:
         """Download media to temp file."""
@@ -181,8 +205,7 @@ class AIAnalyzer:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
-                max_tokens=1500,
-                temperature=0.3,
+                max_completion_tokens=1500,
                 response_format={"type": "json_object"},
             )
 
@@ -347,8 +370,7 @@ Return ONLY valid JSON:
                     },
                     {"role": "user", "content": prompt},
                 ],
-                max_tokens=500,
-                temperature=0.7,
+                max_completion_tokens=500,
                 response_format={"type": "json_object"},
             )
 

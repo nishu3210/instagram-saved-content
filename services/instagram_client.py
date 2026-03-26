@@ -2,7 +2,6 @@
 
 import json
 import logging
-import random
 import time
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
@@ -127,7 +126,23 @@ class InstagramClient:
                     f"HTTP {response.status_code}: {response.text[:200]}"
                 )
 
-            return response.json()
+            content_type = (response.headers.get("Content-Type") or "").lower()
+            if "application/json" not in content_type:
+                body_preview = response.text[:200].strip().lower()
+                if "login" in body_preview or "html" in body_preview:
+                    raise InstagramAuthError(
+                        "Instagram returned a login page. The session is invalid, expired, or blocked by a challenge."
+                    )
+                raise InstagramAPIError(
+                    "Instagram returned a non-JSON response. Try refreshing the session cookie and user agent."
+                )
+
+            try:
+                return response.json()
+            except ValueError:
+                raise InstagramAPIError(
+                    "Instagram returned invalid JSON. Try refreshing the session cookie and user agent."
+                )
 
         except requests.exceptions.Timeout:
             if retries < self.MAX_RETRIES:
@@ -142,7 +157,7 @@ class InstagramClient:
     def validate_session(self) -> Tuple[bool, str]:
         """Validate Instagram session."""
         try:
-            data = self._make_request("GET", "feed/saved/posts/", {"max_id": "0"})
+            data = self._make_request("GET", "feed/saved/posts/")
 
             if "items" in data or "status" in data:
                 return True, "Session valid"

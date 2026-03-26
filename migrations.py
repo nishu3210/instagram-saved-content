@@ -1,5 +1,6 @@
 """Database migration utilities."""
 
+import json
 import logging
 from datetime import datetime, timezone
 
@@ -15,11 +16,18 @@ class DatabaseMigration:
     VERSION_TABLE = "schema_version"
 
     def __init__(self):
-        self.connection = db.engine.connect()
+        self._connection = None
+
+    def _get_connection(self):
+        """Lazy load database connection."""
+        if self._connection is None:
+            self._connection = db.engine.connect()
+        return self._connection
 
     def init_version_table(self):
         """Initialize version tracking table."""
-        self.connection.execute(
+        conn = self._get_connection()
+        conn.execute(
             text(f"""
             CREATE TABLE IF NOT EXISTS {self.VERSION_TABLE} (
                 version INTEGER PRIMARY KEY,
@@ -28,12 +36,13 @@ class DatabaseMigration:
             )
         """)
         )
-        self.connection.commit()
+        conn.commit()
 
     def get_current_version(self) -> int:
         """Get current schema version."""
         try:
-            result = self.connection.execute(
+            conn = self._get_connection()
+            result = conn.execute(
                 text(f"SELECT MAX(version) FROM {self.VERSION_TABLE}")
             )
             version = result.scalar()
@@ -43,6 +52,7 @@ class DatabaseMigration:
 
     def migrate(self):
         """Run all pending migrations."""
+        conn = self._get_connection()
         self.init_version_table()
         current = self.get_current_version()
 
@@ -56,30 +66,30 @@ class DatabaseMigration:
             if version > current:
                 logger.info(f"Applying migration {version}: {description}")
                 try:
-                    migration_func()
-                    self._record_migration(version, description)
+                    migration_func(conn)
+                    self._record_migration(conn, version, description)
                     logger.info(f"Migration {version} complete")
                 except Exception as e:
                     logger.error(f"Migration {version} failed: {e}")
                     raise
 
-    def _record_migration(self, version: int, description: str):
+    def _record_migration(self, conn, version: int, description: str):
         """Record successful migration."""
-        self.connection.execute(
+        conn.execute(
             text(f"""
                 INSERT INTO {self.VERSION_TABLE} (version, description)
                 VALUES (:version, :description)
             """),
             {"version": version, "description": description},
         )
-        self.connection.commit()
+        conn.commit()
 
-    def _migrate_v1(self):
+    def _migrate_v1(self, conn):
         """Add timezone support to datetime columns."""
         tables = ["posts", "analysis", "action_tasks", "conversations", "messages"]
         for table in tables:
             try:
-                self.connection.execute(
+                conn.execute(
                     text(f"""
                         ALTER TABLE {table} 
                         ADD COLUMN IF NOT EXISTS created_at_tz TIMESTAMP
@@ -87,9 +97,9 @@ class DatabaseMigration:
                 )
             except Exception as e:
                 logger.warning(f"Could not migrate {table}: {e}")
-        self.connection.commit()
+        conn.commit()
 
-    def _migrate_v2(self):
+    def _migrate_v2(self, conn):
         """Add performance indexes."""
         indexes = [
             "CREATE INDEX IF NOT EXISTS idx_posts_username ON posts(username)",
@@ -98,16 +108,16 @@ class DatabaseMigration:
         ]
         for idx_sql in indexes:
             try:
-                self.connection.execute(text(idx_sql))
+                conn.execute(text(idx_sql))
             except Exception as e:
                 logger.warning(f"Could not create index: {e}")
-        self.connection.commit()
+        conn.commit()
 
-    def _migrate_v3(self):
+    def _migrate_v3(self, conn):
         """Normalize JSON fields - clean up double-encoded data."""
         try:
             # Get all analysis rows
-            result = self.connection.execute(
+            result = conn.execute(
                 text("SELECT id, topics, learning_points, action_items FROM analysis")
             )
             rows = result.fetchall()
@@ -141,17 +151,20 @@ class DatabaseMigration:
                 if updates:
                     set_clause = ", ".join([f"{k} = :{k}" for k in updates.keys()])
                     updates["id"] = row_id
-                    self.connection.execute(
+                    conn.execute(
                         text(f"UPDATE analysis SET {set_clause} WHERE id = :id"),
                         updates,
                     )
 
-            self.connection.commit()
+            conn.commit()
         except Exception as e:
             logger.error(f"JSON normalization failed: {e}")
 
 
 def run_migrations():
     """Run all migrations."""
-    migrator = DatabaseMigration()
-    migrator.migrate()
+    try:
+        migrator = DatabaseMigration()
+        migrator.migrate()
+    except Exception as e:
+        logger.warning(f"Migrations skipped or failed: {e}")

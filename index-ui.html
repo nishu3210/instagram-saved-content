@@ -41,17 +41,44 @@
     </script>
 
     <style>
+        :root {
+            --bg-1: #07111f;
+            --bg-2: #0f172a;
+            --bg-3: #132238;
+            --line: rgba(255, 255, 255, 0.08);
+            --line-strong: rgba(255, 255, 255, 0.16);
+            --text-soft: #94a3b8;
+            --text-muted: #64748b;
+            --accent-warm: #f59e0b;
+        }
+
         body {
-            background-color: #0f172a;
+            background:
+                radial-gradient(circle at top left, rgba(6, 182, 212, 0.12), transparent 28%),
+                radial-gradient(circle at top right, rgba(124, 58, 237, 0.18), transparent 32%),
+                linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 45%, var(--bg-3) 100%);
             color: #f8fafc;
             overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 36px 36px;
+            mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.55), transparent 90%);
         }
 
         .glass {
             background: rgba(30, 41, 59, 0.7);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--line);
+            box-shadow: 0 24px 80px rgba(2, 6, 23, 0.35);
         }
 
         .glass-panel {
@@ -105,6 +132,128 @@
 
             100% {
                 left: 150%;
+            }
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.9fr);
+            gap: 1.5rem;
+        }
+
+        .command-card {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.72));
+            border: 1px solid var(--line);
+            border-radius: 1.5rem;
+            padding: 1.25rem;
+        }
+
+        .signal-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.45rem 0.75rem;
+            border-radius: 999px;
+            border: 1px solid var(--line-strong);
+            background: rgba(15, 23, 42, 0.55);
+            color: #cbd5e1;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .signal-dot {
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 999px;
+            background: #64748b;
+            box-shadow: 0 0 0 4px rgba(100, 116, 139, 0.15);
+        }
+
+        .signal-dot.live {
+            background: #10b981;
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.18);
+        }
+
+        .signal-dot.warn {
+            background: var(--accent-warm);
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.18);
+        }
+
+        .quick-action {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1rem;
+            border-radius: 1rem;
+            border: 1px solid var(--line);
+            background: rgba(15, 23, 42, 0.55);
+            transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+        }
+
+        .quick-action:hover {
+            transform: translateY(-2px);
+            border-color: rgba(45, 212, 191, 0.28);
+            background: rgba(15, 23, 42, 0.78);
+        }
+
+        .empty-state {
+            border: 1px dashed rgba(148, 163, 184, 0.28);
+            background: rgba(15, 23, 42, 0.42);
+            border-radius: 1.25rem;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .field-shell {
+            border: 1px solid var(--line);
+            background: rgba(15, 23, 42, 0.72);
+            border-radius: 0.9rem;
+            transition: border-color 180ms ease, box-shadow 180ms ease;
+        }
+
+        .field-shell:focus-within {
+            border-color: rgba(45, 212, 191, 0.45);
+            box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.08);
+        }
+
+        .field-shell input,
+        .field-shell select {
+            background: transparent;
+            border: none;
+            outline: none;
+            width: 100%;
+        }
+
+        .section-kicker {
+            color: #67e8f9;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .stagger-in {
+            animation: riseIn 420ms ease both;
+        }
+
+        @keyframes riseIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .hero-grid {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -203,6 +352,63 @@
         <!-- VIEW: DASHBOARD -->
         <div id="dashboard-view" class="view-section space-y-8">
 
+            <section class="hero-grid">
+                <div class="glass rounded-[2rem] p-8 relative overflow-hidden stagger-in">
+                    <div class="absolute inset-0 bg-gradient-to-br from-cyan-400/10 via-transparent to-accent/15 pointer-events-none"></div>
+                    <div class="relative z-10 space-y-8">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <span class="signal-pill"><span id="systemSignalDot" class="signal-dot"></span><span id="systemSignalLabel">System warming up</span></span>
+                            <span class="signal-pill">Daily command center</span>
+                            <span class="signal-pill">Saved content intelligence</span>
+                        </div>
+
+                        <div class="max-w-3xl">
+                            <p class="section-kicker mb-3">Use This Every Day</p>
+                            <h1 class="text-5xl md:text-6xl font-black tracking-tight leading-[0.95] text-white">Turn saved posts into a working system, not a graveyard.</h1>
+                            <p class="mt-5 text-lg text-slate-300 max-w-2xl">Sync what you saved, analyze what matters, extract action items, and ask Oracle when you need recall instead of scrolling.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="command-card">
+                                <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-2">Library</p>
+                                <p id="heroTotalPosts" class="text-3xl font-bold text-white">0</p>
+                                <p class="text-sm text-slate-400 mt-2">Saved posts currently tracked in your system.</p>
+                            </div>
+                            <div class="command-card">
+                                <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-2">Analysis Coverage</p>
+                                <p id="heroCoverage" class="text-3xl font-bold text-cyan-300">0%</p>
+                                <p class="text-sm text-slate-400 mt-2">How much of your library is already usable by search and chat.</p>
+                            </div>
+                            <div class="command-card">
+                                <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-2">Execution Load</p>
+                                <p id="heroOpenTasks" class="text-3xl font-bold text-amber-300">0</p>
+                                <p class="text-sm text-slate-400 mt-2">Open tasks generated from your saved content and manual planning.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap gap-3">
+                            <button onclick="runPrimaryAction()" id="primaryActionBtn"
+                                class="px-6 py-3 bg-white text-midnight font-bold rounded-xl hover:bg-slate-200 transition-all shadow-[0_0_24px_rgba(255,255,255,0.18)]">Start Setup</button>
+                            <button onclick="switchTab('settings')"
+                                class="px-6 py-3 bg-slate-900/70 border border-slate-700 text-white font-semibold rounded-xl hover:bg-slate-800 transition-colors">Review Credentials</button>
+                            <button onclick="switchTab('execution')"
+                                class="px-6 py-3 bg-transparent border border-cyan-400/30 text-cyan-200 font-semibold rounded-xl hover:bg-cyan-400/10 transition-colors">Open Today’s Plan</button>
+                        </div>
+                    </div>
+                </div>
+
+                <aside class="glass rounded-[2rem] p-6 stagger-in" style="animation-delay: 80ms;">
+                    <div class="flex items-center justify-between mb-5">
+                        <div>
+                            <p class="section-kicker mb-2">First-Run Guide</p>
+                            <h2 class="text-2xl font-bold text-white">What to do next</h2>
+                        </div>
+                        <span id="onboardingBadge" class="px-3 py-1 rounded-full bg-slate-800 text-slate-300 text-xs font-bold border border-slate-700">Needs setup</span>
+                    </div>
+                    <div id="onboardingChecklist" class="space-y-3"></div>
+                </aside>
+            </section>
+
             <!-- Hero / Profile -->
             <div class="glass rounded-3xl p-8 relative overflow-hidden group">
                 <div
@@ -285,6 +491,10 @@
                         class="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg px-4 py-2">
                         <option value="all">All Categories</option>
                     </select>
+                    <select id="collectionFilter" onchange="loadPosts(1)"
+                        class="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg px-4 py-2">
+                        <option value="all">All Collections</option>
+                    </select>
                     <select id="sentimentFilter" onchange="loadPosts(1)"
                         class="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg px-4 py-2">
                         <option value="all">All Sentiments</option>
@@ -305,6 +515,14 @@
 
             <!-- Grid -->
             <div id="postsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            <div id="postsEmptyState" class="empty-state hidden">
+                <p class="text-lg font-semibold text-white mb-2">No posts match this view yet.</p>
+                <p class="text-sm text-slate-400 mb-5">Sync your Instagram saves or loosen the filters to see more of your library.</p>
+                <div class="flex flex-wrap justify-center gap-3">
+                    <button onclick="syncLibrary()" class="px-4 py-2 bg-white text-midnight rounded-lg font-bold">Sync Library</button>
+                    <button onclick="resetGalleryFilters()" class="px-4 py-2 bg-slate-800 text-white rounded-lg font-semibold border border-slate-700">Reset Filters</button>
+                </div>
+            </div>
 
             <!-- Pagination -->
             <div class="flex justify-center items-center gap-4 py-8">
@@ -341,7 +559,7 @@
                 <div class="flex flex-col md:flex-row justify-between gap-3">
                     <div>
                         <h3 class="text-lg font-bold text-white">Today’s Execution Plan</h3>
-                        <p class="text-sm text-slate-400">Top priorities to complete next.</p>
+                        <p class="text-sm text-slate-400">The smallest set of tasks that will move your saved ideas into action.</p>
                     </div>
                     <div class="flex gap-2">
                         <button onclick="bootstrapTasks()"
@@ -425,6 +643,17 @@
         <!-- VIEW: SETTINGS -->
         <div id="settings-view" class="view-section hidden">
             <div class="max-w-2xl mx-auto space-y-6">
+                <div class="glass p-8 rounded-3xl">
+                    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                        <div>
+                            <p class="section-kicker mb-2">Onboarding</p>
+                            <h2 class="text-2xl font-bold text-white mb-2">Connect once, then use daily.</h2>
+                            <p class="text-slate-400 text-sm max-w-xl">Your credentials stay in this browser for convenience and can be replaced anytime. The goal is to make sync, analysis, and recall feel like one workflow.</p>
+                        </div>
+                        <button onclick="clearSavedSetup()" class="px-4 py-2 bg-slate-900 border border-slate-700 text-white rounded-lg text-sm font-semibold hover:bg-slate-800">Clear Local Setup</button>
+                    </div>
+                </div>
+
                 <!-- Instagram Credentials -->
                 <div class="glass p-8 rounded-3xl">
                     <h2 class="text-xl font-bold mb-6 flex items-center gap-2">📷 Instagram Connection</h2>
@@ -432,37 +661,59 @@
                         <div>
                             <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Session ID</label>
                             <div class="flex gap-2">
-                                <input type="password" id="sessionid"
-                                    class="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-accent focus:outline-none"
-                                    placeholder="Enter sessionid cookie">
-                                <select id="browserSelect"
-                                    class="bg-slate-900 border border-slate-700 rounded-lg px-3 text-white">
-                                    <option value="chrome">Chrome</option>
-                                    <option value="firefox">Firefox</option>
-                                    <option value="safari">Safari</option>
-                                    <option value="all">Scan All</option>
-                                </select>
+                                <div class="field-shell flex-1 px-3 py-3">
+                                    <input type="password" id="sessionid" placeholder="Enter sessionid cookie">
+                                </div>
+                                <div class="field-shell px-3">
+                                    <select id="browserSelect" class="py-3 text-white">
+                                        <option value="chrome">Chrome</option>
+                                        <option value="firefox">Firefox</option>
+                                        <option value="safari">Safari</option>
+                                        <option value="all">Scan All</option>
+                                    </select>
+                                </div>
                                 <button onclick="autoFillFromBrowser()"
                                     class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors whitespace-nowrap">🔑
                                     Auto-fill</button>
                             </div>
+                            <p class="text-xs text-slate-500 mt-2">Best path: stay logged into Instagram in your browser, then use Auto-fill.</p>
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Raw Cookie
                                 (Optional)</label>
-                            <input type="text" id="raw_cookie"
-                                class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"
-                                placeholder="Full cookie string if auto-fill fails">
+                            <div class="field-shell px-3 py-3">
+                                <input type="text" id="raw_cookie" placeholder="Full cookie string if auto-fill fails">
+                            </div>
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-400 uppercase mb-2">User Agent</label>
-                            <input type="text" id="user_agent"
-                                class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"
-                                placeholder="Browser User Agent">
+                            <div class="field-shell px-3 py-3">
+                                <input type="text" id="user_agent" placeholder="Browser User Agent">
+                            </div>
                         </div>
-                        <button onclick="testCredentials()"
-                            class="w-full py-3 bg-white text-midnight font-bold rounded-xl hover:bg-slate-200 transition-all">🧪
-                            Test Connection</button>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <button onclick="testCredentials()"
+                                class="w-full py-3 bg-white text-midnight font-bold rounded-xl hover:bg-slate-200 transition-all">🧪
+                                Test Connection</button>
+                            <button onclick="saveSetup()"
+                                class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all border border-slate-700">💾
+                                Save In Browser</button>
+                        </div>
+
+                        <div id="connectionDiagnostics" class="hidden rounded-2xl border border-slate-700 bg-slate-950/60 p-5 space-y-3">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Connection Diagnostics</p>
+                                    <p id="connectionDiagnosticsTitle" class="text-lg font-semibold text-white">Waiting for test</p>
+                                </div>
+                                <span id="connectionDiagnosticsBadge" class="px-3 py-1 rounded-full text-xs font-bold border bg-slate-800 text-slate-300 border-slate-700">Idle</span>
+                            </div>
+                            <p id="connectionDiagnosticsMessage" class="text-sm text-slate-300">Run “Test Connection” to see what Instagram is returning.</p>
+                            <div>
+                                <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-2">What to do next</p>
+                                <ul id="connectionDiagnosticsSteps" class="space-y-2 text-sm text-slate-400"></ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -473,21 +724,33 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Endpoint</label>
-                                <input type="text" id="azure_endpoint"
-                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white">
+                                <div class="field-shell px-3 py-3">
+                                    <input type="text" id="azure_endpoint">
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-400 uppercase mb-2">API Key</label>
-                                <input type="password" id="azure_key"
-                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white">
+                                <div class="field-shell px-3 py-3">
+                                    <input type="password" id="azure_key">
+                                </div>
                             </div>
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Model
                                 Deployment</label>
-                            <input type="text" id="model" value="DeepSeek-V3.2"
-                                class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white">
+                            <div class="field-shell px-3 py-3">
+                                <input type="text" id="model" value="DeepSeek-V3.2">
+                            </div>
                         </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <button onclick="testAzureConfig()"
+                                class="w-full py-3 bg-white text-midnight font-bold rounded-xl hover:bg-slate-200 transition-all">🧪
+                                Test Azure</button>
+                            <div class="rounded-xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm text-slate-400">
+                                Use the exact Azure deployment name here, not the base model family name.
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500">If the server already has an Azure key, you can leave the API key blank and use the server-side secret.</p>
                     </div>
                 </div>
 
@@ -503,9 +766,17 @@
                 <div class="glass p-8 rounded-3xl">
                     <h2 class="text-xl font-bold mb-4">🛠 Data Maintenance</h2>
                     <p class="text-slate-400 text-sm mb-4">Fix legacy encoded analysis fields after old runs.</p>
-                    <button onclick="normalizeAnalysisData()"
-                        class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all">Normalize
-                        Analysis Data</button>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <button onclick="normalizeAnalysisData()"
+                            class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all">Normalize
+                            Analysis Data</button>
+                        <button onclick="importCachedAnalysis()"
+                            class="w-full py-3 bg-white text-midnight font-bold rounded-xl hover:bg-slate-200 transition-all">Import
+                            Cached Analysis</button>
+                    </div>
+                    <button onclick="importIndexedMetadata()"
+                        class="w-full mt-3 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all border border-slate-700">Restore
+                        Indexed Posts</button>
                 </div>
             </div>
         </div>
@@ -526,12 +797,15 @@
 
     <script>
         const API_BASE = '/api';
+        const LOCAL_SETUP_KEY = 'saved-intelligence-setup-v1';
         let currentPage = 1;
         let totalPages = 1;
         let taskCurrentPage = 1;
         let taskTotalPages = 1;
         let conversationId = null;
         let charts = {};
+        let latestStats = null;
+        let statusPollTimer = null;
 
         // --- Navigation ---
         function switchTab(viewId) {
@@ -559,6 +833,153 @@
                 .replace(/'/g, '&#39;');
         }
 
+        function getSetupState() {
+            return {
+                sessionid: document.getElementById('sessionid').value.trim(),
+                raw_cookie: document.getElementById('raw_cookie').value.trim(),
+                user_agent: document.getElementById('user_agent').value.trim(),
+                browser: document.getElementById('browserSelect').value,
+                azure_endpoint: document.getElementById('azure_endpoint').value.trim(),
+                azure_key: document.getElementById('azure_key').value.trim(),
+                model: document.getElementById('model').value.trim()
+            };
+        }
+
+        function saveSetup(showFeedback = true) {
+            const state = getSetupState();
+            localStorage.setItem(LOCAL_SETUP_KEY, JSON.stringify(state));
+            if (showFeedback) showToast('Setup saved in this browser', 'success');
+            updateOnboardingUI();
+        }
+
+        function loadSavedSetup() {
+            try {
+                const raw = localStorage.getItem(LOCAL_SETUP_KEY);
+                if (!raw) return;
+                const state = JSON.parse(raw);
+                if (state.sessionid) document.getElementById('sessionid').value = state.sessionid;
+                if (state.raw_cookie) document.getElementById('raw_cookie').value = state.raw_cookie;
+                if (state.user_agent) document.getElementById('user_agent').value = state.user_agent;
+                if (state.browser) document.getElementById('browserSelect').value = state.browser;
+                if (state.azure_endpoint) document.getElementById('azure_endpoint').value = state.azure_endpoint;
+                if (state.azure_key) document.getElementById('azure_key').value = state.azure_key;
+                if (state.model) document.getElementById('model').value = state.model;
+            } catch (e) {
+                console.log('Saved setup load failed', e);
+            }
+        }
+
+        function clearSavedSetup() {
+            localStorage.removeItem(LOCAL_SETUP_KEY);
+            ['sessionid', 'raw_cookie', 'user_agent', 'azure_endpoint', 'azure_key'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            document.getElementById('model').value = 'DeepSeek-V3.2';
+            showToast('Local setup cleared', 'info');
+            updateOnboardingUI();
+        }
+
+        function updateOnboardingUI() {
+            const state = getSetupState();
+            const hasInstagram = Boolean(state.sessionid || state.raw_cookie);
+            const hasAzure = Boolean(state.azure_endpoint && (state.azure_key || document.getElementById('azure_key').placeholder));
+            const hasPosts = Boolean((latestStats?.total_posts || 0) > 0);
+            const hasAnalysis = Boolean((latestStats?.analyzed_count || 0) > 0);
+
+            const steps = [
+                {
+                    done: hasInstagram,
+                    title: 'Connect Instagram',
+                    detail: hasInstagram ? 'Credentials are present in this browser.' : 'Add a session ID or use browser auto-fill.',
+                    action: 'Open Settings',
+                    handler: "switchTab('settings')"
+                },
+                {
+                    done: hasAzure,
+                    title: 'Connect Azure OpenAI',
+                    detail: hasAzure ? 'AI analysis is configured.' : 'Add endpoint and key, or rely on the server-side key.',
+                    action: 'Review AI Setup',
+                    handler: "switchTab('settings')"
+                },
+                {
+                    done: hasPosts,
+                    title: 'Sync your library',
+                    detail: hasPosts ? `${latestStats.total_posts} posts are already in your workspace.` : 'Pull your saved posts into the local library.',
+                    action: 'Sync Now',
+                    handler: 'syncLibrary()'
+                },
+                {
+                    done: hasAnalysis,
+                    title: 'Analyze for recall',
+                    detail: hasAnalysis ? `${latestStats.analyzed_count} posts are searchable and usable in Oracle.` : 'Run analysis so the system can categorize, summarize, and generate tasks.',
+                    action: 'Analyze Batch',
+                    handler: 'analyzeBatch()'
+                }
+            ];
+
+            const checklist = document.getElementById('onboardingChecklist');
+            checklist.innerHTML = steps.map((step, index) => `
+                <div class="quick-action">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.18em] ${step.done ? 'text-emerald-300' : 'text-slate-500'} mb-2">Step ${index + 1}</p>
+                        <p class="text-white font-semibold mb-1">${escapeHtml(step.title)}</p>
+                        <p class="text-sm text-slate-400">${escapeHtml(step.detail)}</p>
+                    </div>
+                    <button onclick="${step.handler}" class="px-3 py-2 rounded-lg text-xs font-bold ${step.done ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20' : 'bg-slate-800 text-white border border-slate-700'}">${step.done ? 'Done' : escapeHtml(step.action)}</button>
+                </div>
+            `).join('');
+
+            const badge = document.getElementById('onboardingBadge');
+            const completed = steps.filter(step => step.done).length;
+            badge.textContent = completed === steps.length ? 'Ready for daily use' : `${completed}/${steps.length} complete`;
+            badge.className = `px-3 py-1 rounded-full text-xs font-bold border ${completed === steps.length ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/20' : 'bg-slate-800 text-slate-300 border-slate-700'}`;
+
+            const signalDot = document.getElementById('systemSignalDot');
+            const signalLabel = document.getElementById('systemSignalLabel');
+            if (!hasInstagram || !hasAzure) {
+                signalDot.className = 'signal-dot warn';
+                signalLabel.textContent = 'Setup incomplete';
+            } else if (!hasAnalysis) {
+                signalDot.className = 'signal-dot warn';
+                signalLabel.textContent = 'Ready to analyze';
+            } else {
+                signalDot.className = 'signal-dot live';
+                signalLabel.textContent = 'System ready';
+            }
+
+            const primaryActionBtn = document.getElementById('primaryActionBtn');
+            if (!hasInstagram || !hasAzure) {
+                primaryActionBtn.textContent = 'Start Setup';
+            } else if (!hasPosts) {
+                primaryActionBtn.textContent = 'Sync Library';
+            } else if (!hasAnalysis) {
+                primaryActionBtn.textContent = 'Analyze Library';
+            } else {
+                primaryActionBtn.textContent = 'Open Oracle';
+            }
+        }
+
+        function runPrimaryAction() {
+            const state = getSetupState();
+            const hasInstagram = Boolean(state.sessionid || state.raw_cookie);
+            const hasAzure = Boolean(state.azure_endpoint && (state.azure_key || document.getElementById('azure_key').placeholder));
+            const hasPosts = Boolean((latestStats?.total_posts || 0) > 0);
+            const hasAnalysis = Boolean((latestStats?.analyzed_count || 0) > 0);
+
+            if (!hasInstagram || !hasAzure) return switchTab('settings');
+            if (!hasPosts) return syncLibrary();
+            if (!hasAnalysis) return analyzeBatch();
+            switchTab('chat');
+        }
+
+        function resetGalleryFilters() {
+            document.getElementById('sortFilter').value = 'newest';
+            document.getElementById('categoryFilter').value = 'all';
+            document.getElementById('collectionFilter').value = 'all';
+            document.getElementById('sentimentFilter').value = 'all';
+            loadPosts(1);
+        }
+
         // --- Toast ---
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
@@ -569,14 +990,80 @@
             setTimeout(() => { toast.style.animation = 'slideOut 0.3s'; setTimeout(() => toast.remove(), 300); }, 3000);
         }
 
+        function renderConnectionDiagnostics(kind, message) {
+            const panel = document.getElementById('connectionDiagnostics');
+            const title = document.getElementById('connectionDiagnosticsTitle');
+            const badge = document.getElementById('connectionDiagnosticsBadge');
+            const body = document.getElementById('connectionDiagnosticsMessage');
+            const steps = document.getElementById('connectionDiagnosticsSteps');
+
+            const presets = {
+                idle: {
+                    title: 'Waiting for test',
+                    badge: 'Idle',
+                    badgeClass: 'bg-slate-800 text-slate-300 border-slate-700',
+                    message: 'Run “Test Connection” to see what Instagram is returning.',
+                    steps: [
+                        'Stay logged into Instagram in your browser.',
+                        'Use Auto-fill to pull the latest session cookie.',
+                        'Then run Test Connection again.'
+                    ]
+                },
+                success: {
+                    title: 'Instagram session accepted',
+                    badge: 'Connected',
+                    badgeClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/20',
+                    message,
+                    steps: [
+                        'Your session looks valid.',
+                        'Next step: sync your saved library.',
+                        'If sync later fails, refresh the cookie and user agent together.'
+                    ]
+                },
+                auth: {
+                    title: 'Instagram rejected this session',
+                    badge: 'Auth Failed',
+                    badgeClass: 'bg-rose-500/15 text-rose-300 border-rose-500/20',
+                    message,
+                    steps: [
+                        'Open Instagram in the same browser and confirm you are fully logged in.',
+                        'Use Auto-fill again to fetch a fresh sessionid.',
+                        'If Auto-fill still fails, copy the latest sessionid cookie manually.',
+                        'If Instagram shows a challenge or login prompt, resolve that first and retry.'
+                    ]
+                },
+                network: {
+                    title: 'Instagram request failed',
+                    badge: 'Network Issue',
+                    badgeClass: 'bg-amber-500/15 text-amber-300 border-amber-500/20',
+                    message,
+                    steps: [
+                        'Check your internet connection.',
+                        'Retry after a few seconds in case Instagram is rate-limiting.',
+                        'If you use a VPN or proxy, try disabling it temporarily.'
+                    ]
+                }
+            };
+
+            const preset = presets[kind] || presets.network;
+            panel.classList.remove('hidden');
+            title.textContent = preset.title;
+            badge.textContent = preset.badge;
+            badge.className = `px-3 py-1 rounded-full text-xs font-bold border ${preset.badgeClass}`;
+            body.textContent = preset.message;
+            steps.innerHTML = preset.steps.map(step => `<li class="flex gap-2"><span class="text-cyan-300">•</span><span>${escapeHtml(step)}</span></li>`).join('');
+        }
+
         // --- Init ---
         async function init() {
+            loadSavedSetup();
             await loadConfig();
             await loadStats();
             await loadTaskStats();
             await loadTodayPlan();
             await loadTasks(1);
-            pollStatus();
+            startStatusPolling();
+            updateOnboardingUI();
         }
 
         async function loadConfig() {
@@ -584,9 +1071,11 @@
                 const res = await fetch(`${API_BASE}/config`);
                 const data = await res.json();
                 if (data.azure_endpoint) document.getElementById('azure_endpoint').value = data.azure_endpoint;
+                if (data.model && !document.getElementById('model').value) document.getElementById('model').value = data.model;
                 if (data.has_azure_key && !document.getElementById('azure_key').value) {
                     document.getElementById('azure_key').placeholder = 'Using server-side environment key';
                 }
+                updateOnboardingUI();
             } catch (e) { console.log('Config load failed'); }
         }
 
@@ -594,16 +1083,21 @@
             try {
                 const res = await fetch(`${API_BASE}/stats`);
                 const stats = await res.json();
+                latestStats = stats;
 
                 document.getElementById('postsCountBadge').textContent = `${stats.total_posts} POSTS SAVED`;
                 document.getElementById('indexedCountDisplay').textContent = stats.embedded_count || 0;
                 document.getElementById('analyzedCountDisplay').textContent = stats.analyzed_count || 0;
+                document.getElementById('heroTotalPosts').textContent = stats.total_posts || 0;
+                document.getElementById('heroOpenTasks').textContent = document.getElementById('taskOpenCount').textContent || 0;
 
                 const pct = stats.total_posts > 0 ? (stats.analyzed_count / stats.total_posts) * 100 : 0;
+                document.getElementById('heroCoverage').textContent = `${Math.round(pct)}%`;
                 document.getElementById('indexBar').style.width = `${pct}%`;
 
                 initCharts(stats);
                 renderFilters(stats.categories);
+                updateOnboardingUI();
             } catch (e) { console.log('Stats load failed', e); }
         }
 
@@ -637,9 +1131,21 @@
         }
 
         function renderFilters(categories) {
-            const sel = document.getElementById('categoryFilter');
-            sel.innerHTML = '<option value="all">All Categories</option>';
-            Object.keys(categories || {}).forEach(cat => { sel.innerHTML += `<option value="${cat}">${cat}</option>`; });
+            const categorySel = document.getElementById('categoryFilter');
+            const collectionSel = document.getElementById('collectionFilter');
+            const currentCategory = categorySel.value;
+            const currentCollection = collectionSel.value;
+            categorySel.innerHTML = '<option value="all">All Categories</option>';
+            Object.keys(categories || {}).forEach(cat => { categorySel.innerHTML += `<option value="${cat}">${cat}</option>`; });
+            categorySel.value = Array.from(categorySel.options).some(opt => opt.value === currentCategory) ? currentCategory : 'all';
+
+            const collections = new Set();
+            document.querySelectorAll('#postsGrid [data-collection]').forEach(el => collections.add(el.dataset.collection));
+            collectionSel.innerHTML = '<option value="all">All Collections</option>';
+            Array.from(collections).sort().forEach(collection => {
+                collectionSel.innerHTML += `<option value="${collection}">${collection}</option>`;
+            });
+            collectionSel.value = Array.from(collectionSel.options).some(opt => opt.value === currentCollection) ? currentCollection : 'all';
         }
 
         // --- Gallery ---
@@ -647,9 +1153,10 @@
             try {
                 const sort = document.getElementById('sortFilter').value;
                 const cat = document.getElementById('categoryFilter').value;
+                const collection = document.getElementById('collectionFilter').value;
                 const sent = document.getElementById('sentimentFilter').value;
 
-                const res = await fetch(`${API_BASE}/posts?page=${page}&per_page=50&sort=${sort}&category=${cat}&sentiment=${sent}`);
+                const res = await fetch(`${API_BASE}/posts?page=${page}&per_page=50&sort=${sort}&category=${cat}&collection=${collection}&sentiment=${sent}`);
                 const data = await res.json();
 
                 currentPage = data.current_page || 1;
@@ -672,6 +1179,13 @@
 
         function renderGallery(posts) {
             const grid = document.getElementById('postsGrid');
+            const empty = document.getElementById('postsEmptyState');
+            if (!posts.length) {
+                grid.innerHTML = '';
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
             grid.innerHTML = posts.map(p => {
                 const analysis = p.analysis || {};
                 const sentimentLabel = analysis.sentiment?.label || analysis.sentiment_label || '';
@@ -679,11 +1193,12 @@
                 const username = escapeHtml(p.username || 'unknown');
                 const caption = escapeHtml((p.caption || '').substring(0, 100));
                 const shortcode = escapeHtml(p.shortcode || '');
+                const collections = (p.collections || []).map(escapeHtml);
                 const proxyImage = p.thumbnail_url
                     ? `${API_BASE}/media-proxy?shortcode=${encodeURIComponent(p.shortcode || '')}&url=${encodeURIComponent(p.thumbnail_url)}`
                     : '';
                 return `
-                <div class="glass rounded-2xl overflow-hidden hover:translate-y-[-5px] transition-transform duration-300 group cursor-pointer" onclick="window.open('https://www.instagram.com/p/${shortcode}', '_blank')">
+                <div class="glass rounded-2xl overflow-hidden hover:translate-y-[-5px] transition-transform duration-300 group cursor-pointer stagger-in" data-collection="${collections[0] || ''}" onclick="window.open('https://www.instagram.com/p/${shortcode}', '_blank')">
                     <div class="relative h-48 bg-slate-800">
                         ${proxyImage ? `<img src="${proxyImage}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=No+Image'">` : '<div class="w-full h-full flex items-center justify-center text-slate-600">No Image</div>'}
                         <div class="absolute top-3 right-3">
@@ -700,9 +1215,19 @@
                              <span class="text-xs font-bold ${sentimentLabel === 'Positive' ? 'text-green-400' : 'text-slate-400'}">${escapeHtml(sentimentLabel)}</span>
                         </div>
                         <p class="text-sm text-slate-300 line-clamp-2 font-light">${caption}...</p>
+                        ${collections.length ? `<div class="flex flex-wrap gap-2 mt-3">${collections.slice(0, 2).map(collection => `<span class="px-2 py-1 rounded-full bg-slate-800 text-[11px] text-slate-300 border border-slate-700">${collection}</span>`).join('')}</div>` : ''}
                     </div>
                 </div>
             `}).join('');
+
+            const collectionSel = document.getElementById('collectionFilter');
+            const currentCollection = collectionSel.value;
+            const uniqueCollections = Array.from(new Set(posts.flatMap(post => post.collections || []))).sort();
+            collectionSel.innerHTML = '<option value="all">All Collections</option>';
+            uniqueCollections.forEach(collection => {
+                collectionSel.innerHTML += `<option value="${escapeHtml(collection)}">${escapeHtml(collection)}</option>`;
+            });
+            collectionSel.value = uniqueCollections.includes(currentCollection) ? currentCollection : 'all';
         }
 
         // --- Actions ---
@@ -720,6 +1245,7 @@
                 document.getElementById('sessionid').value = data.sessionid;
                 document.getElementById('raw_cookie').value = data.raw_cookie || '';
                 if (data.user_agent) document.getElementById('user_agent').value = data.user_agent;
+                saveSetup(false);
                 showToast('Cookies loaded from ' + data.browser, 'success');
             } catch (e) { showToast('Failed: ' + e.message, 'error'); }
         }
@@ -738,9 +1264,87 @@
                     })
                 });
                 const data = await res.json();
-                if (data.success) showToast(data.message || 'Instagram connection successful', 'success');
-                else showToast('Failed: ' + data.error, 'error');
+                if (data.success) {
+                    renderConnectionDiagnostics('success', data.message || 'Instagram connection successful');
+                    showToast(data.message || 'Instagram connection successful', 'success');
+                } else {
+                    const errorMessage = data.error || 'Instagram connection failed';
+                    const kind = /invalid|expired|login|challenge/i.test(errorMessage) ? 'auth' : 'network';
+                    renderConnectionDiagnostics(kind, errorMessage);
+                    showToast('Failed: ' + errorMessage, 'error');
+                }
+                saveSetup(false);
             } catch (e) { showToast('Test failed: ' + e.message, 'error'); }
+        }
+
+        async function testAzureConfig() {
+            try {
+                showToast('Testing Azure deployment...', 'info');
+                const res = await fetch(`${API_BASE}/test-azure`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        azure_endpoint: document.getElementById('azure_endpoint').value,
+                        azure_key: document.getElementById('azure_key').value,
+                        model: document.getElementById('model').value
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    throw new Error(data.error || 'Azure validation failed');
+                }
+                saveSetup(false);
+                showToast(data.message || 'Azure deployment is valid', 'success');
+            } catch (e) {
+                showToast('Azure failed: ' + e.message, 'error');
+            }
+        }
+
+        async function importCachedAnalysis() {
+            try {
+                showToast('Importing cached analysis into database...', 'info');
+                const res = await fetch(`${API_BASE}/admin/import-analysis-cache`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const raw = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(raw);
+                } catch {
+                    throw new Error(raw || 'Import failed');
+                }
+                if (!res.ok) throw new Error(data.error || 'Import failed');
+                await loadStats();
+                await loadTaskStats();
+                await loadTodayPlan();
+                showToast(`Imported ${data.imported_analyses} analyses from cache`, 'success');
+            } catch (e) {
+                showToast('Import failed: ' + e.message, 'error');
+            }
+        }
+
+        async function importIndexedMetadata() {
+            try {
+                showToast('Restoring indexed posts into database...', 'info');
+                const res = await fetch(`${API_BASE}/admin/import-index-metadata`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const raw = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(raw);
+                } catch {
+                    throw new Error(raw || 'Restore failed');
+                }
+                if (!res.ok) throw new Error(data.error || 'Restore failed');
+                await loadStats();
+                await loadPosts(1);
+                showToast(`Restored ${data.imported_posts} indexed posts`, 'success');
+            } catch (e) {
+                showToast('Restore failed: ' + e.message, 'error');
+            }
         }
 
         async function syncLibrary() {
@@ -749,12 +1353,7 @@
             try {
                 await fetch(`${API_BASE}/fetch-posts`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        sessionid,
-                        raw_cookie: document.getElementById('raw_cookie').value,
-                        user_agent: document.getElementById('user_agent').value,
-                        browser: document.getElementById('browserSelect').value
-                    })
+                    body: JSON.stringify(getSetupState())
                 });
                 document.getElementById('progressModal').classList.remove('hidden');
                 pollProgress();
@@ -772,6 +1371,7 @@
                         model: document.getElementById('model').value
                     })
                 });
+                saveSetup(false);
                 document.getElementById('progressModal').classList.remove('hidden');
                 pollProgress();
             } catch (e) { showToast('Analysis failed: ' + e.message, 'error'); }
@@ -786,15 +1386,16 @@
                     clearInterval(interval);
                     setTimeout(() => {
                         document.getElementById('progressModal').classList.add('hidden');
-                        if (!data.error) { loadStats(); loadPosts(1); loadTaskStats(); showToast('Complete!', 'success'); }
+                        if (!data.error) { loadStats(); loadPosts(1); loadTaskStats(); loadTodayPlan(); showToast('Complete!', 'success'); }
                         else showToast('Error: ' + data.error, 'error');
                     }, 1000);
                 }
             }, 1000);
         }
 
-        function pollStatus() {
-            setInterval(async () => {
+        function startStatusPolling() {
+            if (statusPollTimer) return;
+            statusPollTimer = setInterval(async () => {
                 try {
                     const res = await fetch(`${API_BASE}/status`);
                     const data = await res.json();
@@ -807,7 +1408,7 @@
                         el.className = 'px-3 py-1 rounded-full text-xs font-bold bg-green-500/20 text-green-400 border border-green-500/30';
                     }
                 } catch (e) { }
-            }, 5000);
+            }, 15000);
         }
 
         // --- Psychometric Profile ---
@@ -878,6 +1479,7 @@
                 document.getElementById('taskDueTodayCount').textContent = stats.due_today || 0;
                 document.getElementById('taskOverdueCount').textContent = stats.overdue || 0;
                 document.getElementById('taskCompletionRate').textContent = `${stats.completion_rate_7d || 0}%`;
+                document.getElementById('heroOpenTasks').textContent = stats.open || 0;
             } catch (e) {
                 console.log('Task stats load failed', e);
             }
@@ -890,7 +1492,7 @@
                 const planList = document.getElementById('todayPlanList');
                 const plan = data.plan || [];
                 if (!plan.length) {
-                    planList.innerHTML = '<div class="text-sm text-slate-400">No open tasks. Generate tasks from analysis or add one manually.</div>';
+                    planList.innerHTML = '<div class="empty-state"><p class="text-lg font-semibold text-white mb-2">No open tasks right now.</p><p class="text-sm text-slate-400 mb-5">Generate tasks from your analyzed saves or add one manually to keep momentum.</p><div class="flex flex-wrap justify-center gap-3"><button onclick="bootstrapTasks()" class="px-4 py-2 bg-white text-midnight rounded-lg font-bold">Generate Tasks</button><button onclick="document.getElementById(\'newTaskTitle\').focus(); switchTab(\'execution\');" class="px-4 py-2 bg-slate-800 text-white rounded-lg font-semibold border border-slate-700">Add Manual Task</button></div></div>';
                     return;
                 }
 
@@ -930,7 +1532,7 @@
         function renderTasks(tasks) {
             const list = document.getElementById('tasksList');
             if (!tasks.length) {
-                list.innerHTML = '<div class="text-sm text-slate-400">No tasks in this filter.</div>';
+                list.innerHTML = '<div class="empty-state"><p class="text-lg font-semibold text-white mb-2">No tasks in this filter.</p><p class="text-sm text-slate-400">Try a broader filter or generate tasks from your analyzed content.</p></div>';
                 return;
             }
 
