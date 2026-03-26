@@ -140,5 +140,4 @@ python flask-backend.py
 ### No Results Displayed
 - Ensure analysis completed successfully (check status endpoint)
 - Verify `analyzed_results.json` contains expected structure
-- Check browser console for JavaScript errors in display functions</content>
-<parameter name="filePath">/Users/nishantjain/Development/instagram-saved-content/.github/copilot-instructions.md
+- Check browser console for JavaScript errors in display functions

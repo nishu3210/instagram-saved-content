@@ -100,7 +100,7 @@ instagram-saved-content/
 
 1. **Create or reuse a conda environment:**
 ```bash
-cd /Users/nishantjain/Development/instagram-saved-content
+cd /path/to/instagram-saved-content
 conda activate env1
 ```
 

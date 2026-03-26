@@ -75,3 +75,6 @@ temp/
 # FAISS index files
 *.bin
 indexed_posts.json
+
+# Data files with PII
+instagram_response.json
