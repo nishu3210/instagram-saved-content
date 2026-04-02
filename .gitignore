@@ -72,6 +72,11 @@ tmp/
 temp/
 *.tmp
 
+# Frontend
+frontend/node_modules/
+frontend/dist/
+static/app/
+
 # FAISS index files
 *.bin
 indexed_posts.json

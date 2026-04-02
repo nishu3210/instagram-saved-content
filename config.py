@@ -80,6 +80,73 @@ class EmbeddingConfig:
 
 
 @dataclass(frozen=True)
+class VerificationConfig:
+    """Grounded verification provider configuration."""
+
+    provider: str = "tavily_gemini"
+    model: str = "gemini-3.1-flash-lite-preview"
+    api_key: Optional[str] = None
+    base_url: str = "https://api.openai.com/v1"
+    tavily_api_key: Optional[str] = None
+    max_claims: int = 5
+    max_sources: int = 5
+
+    @classmethod
+    def from_env(cls) -> "VerificationConfig":
+        """Create config from environment variables."""
+        provider = os.getenv("VERIFICATION_PROVIDER", cls.provider)
+        default_model = (
+            os.getenv("GEMINI_MODEL", GeminiConfig.model)
+            if provider == "tavily_gemini"
+            else "gpt-4.1"
+        )
+        api_key = os.getenv("VERIFICATION_API_KEY")
+        if not api_key and provider == "tavily_gemini":
+            api_key = os.getenv("GEMINI_API_KEY")
+        elif not api_key:
+            api_key = os.getenv("OPENAI_API_KEY")
+
+        return cls(
+            provider=provider,
+            model=os.getenv("VERIFICATION_MODEL", default_model),
+            api_key=api_key,
+            base_url=os.getenv("VERIFICATION_BASE_URL", cls.base_url),
+            tavily_api_key=os.getenv("TAVILY_API_KEY")
+            or os.getenv("VERIFICATION_SEARCH_API_KEY"),
+            max_claims=int(os.getenv("VERIFICATION_MAX_CLAIMS", str(cls.max_claims))),
+            max_sources=int(
+                os.getenv("VERIFICATION_MAX_SOURCES", str(cls.max_sources))
+            ),
+        )
+
+    def is_configured(self) -> bool:
+        """Check if verification config is usable."""
+        if self.provider == "tavily_gemini":
+            return bool(self.provider and self.api_key and self.tavily_api_key)
+        return bool(self.provider and self.api_key)
+
+
+@dataclass(frozen=True)
+class GeminiConfig:
+    """Gemini analysis configuration."""
+
+    api_key: Optional[str] = None
+    model: str = "gemini-3.1-flash-lite-preview"
+
+    @classmethod
+    def from_env(cls) -> "GeminiConfig":
+        """Create Gemini config from environment variables."""
+        return cls(
+            api_key=os.getenv("GEMINI_API_KEY"),
+            model=os.getenv("GEMINI_MODEL", cls.model),
+        )
+
+    def is_configured(self) -> bool:
+        """Check if Gemini is configured."""
+        return bool(self.api_key)
+
+
+@dataclass(frozen=True)
 class DatabaseConfig:
     """Database configuration."""
 
@@ -129,7 +196,9 @@ class Config:
     def __init__(self):
         self.instagram = InstagramConfig.from_env()
         self.azure = AzureConfig.from_env()
+        self.gemini = GeminiConfig.from_env()
         self.embedding = EmbeddingConfig.from_env()
+        self.verification = VerificationConfig.from_env()
         self.database = DatabaseConfig.from_env()
         self.app = AppConfig.from_env()
 

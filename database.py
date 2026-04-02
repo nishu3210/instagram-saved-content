@@ -54,6 +54,28 @@ class JSONList(TypeDecorator):
             return [value.strip()] if value.strip() else []
 
 
+class JSONBlob(TypeDecorator):
+    """Custom type for storing JSON-compatible data."""
+
+    impl = Text
+    cache_ok = True
+
+    def process_bind_param(self, value: Optional[Any], dialect) -> Optional[str]:
+        """Convert Python data to JSON string."""
+        if value is None:
+            return None
+        return json.dumps(value, ensure_ascii=False)
+
+    def process_result_value(self, value: Optional[str], dialect) -> Optional[Any]:
+        """Convert JSON string back to Python data."""
+        if value is None:
+            return None
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            return None
+
+
 class Post(db.Model):
     """Instagram post model."""
 
@@ -91,6 +113,12 @@ class Post(db.Model):
         lazy="dynamic",
         cascade="all, delete-orphan",
     )
+    verification = relationship(
+        "PostVerification",
+        backref=backref("post", uselist=False),
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
@@ -104,10 +132,14 @@ class Post(db.Model):
             "caption": self.caption,
             "media_type": self.media_type,
             "is_video": self.is_video,
+            "video_url": self.media_url if self.is_video else None,
             "likes": self.likes,
             "comments": self.comments,
             "collections": self.collections or [],
             "analysis": self.analysis.to_dict() if self.analysis else None,
+            "verification": self.verification.to_dict(include_raw_report=False)
+            if self.verification
+            else None,
         }
 
 
@@ -177,8 +209,12 @@ class ActionTask(db.Model):
     )
     title = db.Column(db.String(500), nullable=False)
     notes = db.Column(db.Text, nullable=True)
+    next_step = db.Column(db.Text, nullable=True)
     status = db.Column(db.String(20), nullable=False, default="pending", index=True)
     priority = db.Column(db.Integer, nullable=False, default=2)
+    effort = db.Column(db.String(20), nullable=True)
+    impact = db.Column(db.String(20), nullable=True)
+    horizon = db.Column(db.String(20), nullable=True, index=True)
     due_date = db.Column(db.DateTime(timezone=True), nullable=True, index=True)
     scheduled_for = db.Column(db.DateTime(timezone=True), nullable=True, index=True)
     completed_at = db.Column(db.DateTime(timezone=True), nullable=True, index=True)
@@ -203,8 +239,12 @@ class ActionTask(db.Model):
             "post_id": self.post_id,
             "title": self.title,
             "notes": self.notes,
+            "next_step": self.next_step,
             "status": self.status,
             "priority": self.priority,
+            "effort": self.effort,
+            "impact": self.impact,
+            "horizon": self.horizon,
             "due_date": self.due_date.isoformat() if self.due_date else None,
             "scheduled_for": self.scheduled_for.isoformat()
             if self.scheduled_for
@@ -215,6 +255,99 @@ class ActionTask(db.Model):
             "source": self.source,
             "source_key": self.source_key,
             "evidence_text": self.evidence_text,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class WorkspaceProfile(db.Model):
+    """Singleton profile with manual goals and persisted psychometric snapshot."""
+
+    __tablename__ = "workspace_profile"
+
+    id = db.Column(db.Integer, primary_key=True, default=1)
+    manual_goals = db.Column(JSONList, default=list)
+    priorities = db.Column(JSONList, default=list)
+    constraints = db.Column(JSONList, default=list)
+    focus_areas = db.Column(JSONList, default=list)
+    psychometric_profile = db.Column(JSONBlob, nullable=True)
+    profile_refreshed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    created_at = db.Column(
+        db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    @classmethod
+    def get_singleton(cls) -> "WorkspaceProfile":
+        """Load or create the singleton workspace profile."""
+        profile = db.session.get(cls, 1)
+        if profile is None:
+            profile = cls(id=1)
+            db.session.add(profile)
+            db.session.flush()
+        return profile
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "manual_goals": self.manual_goals or [],
+            "priorities": self.priorities or [],
+            "constraints": self.constraints or [],
+            "focus_areas": self.focus_areas or [],
+            "psychometric_profile": self.psychometric_profile or None,
+            "profile_refreshed_at": self.profile_refreshed_at.isoformat()
+            if self.profile_refreshed_at
+            else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class PostVerification(db.Model):
+    """Latest verification report for a post."""
+
+    __tablename__ = "post_verification"
+
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(
+        db.String(50), db.ForeignKey("posts.id"), nullable=False, unique=True, index=True
+    )
+    provider = db.Column(db.String(50), nullable=False)
+    model = db.Column(db.String(100), nullable=True)
+    status = db.Column(db.String(20), nullable=False, default="pending", index=True)
+    verdict = db.Column(db.String(30), nullable=True)
+    confidence = db.Column(db.Float, nullable=True)
+    claims = db.Column(JSONBlob, nullable=True)
+    source_links = db.Column(JSONBlob, nullable=True)
+    evidence_summary = db.Column(db.Text, nullable=True)
+    raw_report = db.Column(JSONBlob, nullable=True)
+    last_error = db.Column(db.Text, nullable=True)
+    created_at = db.Column(
+        db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    def to_dict(self, include_raw_report: bool = True) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "provider": self.provider,
+            "model": self.model,
+            "status": self.status,
+            "verdict": self.verdict,
+            "confidence": self.confidence,
+            "claims": self.claims or [],
+            "source_links": self.source_links or [],
+            "evidence_summary": self.evidence_summary,
+            "raw_report": self.raw_report if include_raw_report else None,
+            "last_error": self.last_error,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -259,6 +392,7 @@ Index("idx_posts_timestamp", Post.timestamp)
 Index("idx_analysis_category", Analysis.category)
 Index("idx_analysis_sentiment", Analysis.sentiment_label)
 Index("idx_tasks_status_priority", ActionTask.status, ActionTask.priority)
+Index("idx_post_verification_status", PostVerification.status)
 
 
 def get_db_uri() -> str:

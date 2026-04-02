@@ -60,6 +60,8 @@ class DatabaseMigration:
             (1, "Add timezone support", self._migrate_v1),
             (2, "Add performance indexes", self._migrate_v2),
             (3, "Normalize JSON fields", self._migrate_v3),
+            (4, "Add workspace profile and verification tables", self._migrate_v4),
+            (5, "Add structured planner fields to action tasks", self._migrate_v5),
         ]
 
         for version, description, migration_func in migrations:
@@ -159,6 +161,85 @@ class DatabaseMigration:
             conn.commit()
         except Exception as e:
             logger.error(f"JSON normalization failed: {e}")
+
+    def _migrate_v4(self, conn):
+        """Create new planning and verification tables for existing databases."""
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS workspace_profile (
+                    id INTEGER PRIMARY KEY,
+                    manual_goals TEXT,
+                    priorities TEXT,
+                    constraints TEXT,
+                    focus_areas TEXT,
+                    psychometric_profile TEXT,
+                    profile_refreshed_at TIMESTAMP,
+                    created_at TIMESTAMP,
+                    updated_at TIMESTAMP
+                )
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS post_verification (
+                    id INTEGER PRIMARY KEY,
+                    post_id VARCHAR(50) NOT NULL UNIQUE,
+                    provider VARCHAR(50) NOT NULL,
+                    model VARCHAR(100),
+                    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+                    verdict VARCHAR(30),
+                    confidence FLOAT,
+                    claims TEXT,
+                    source_links TEXT,
+                    evidence_summary TEXT,
+                    raw_report TEXT,
+                    last_error TEXT,
+                    created_at TIMESTAMP,
+                    updated_at TIMESTAMP,
+                    FOREIGN KEY(post_id) REFERENCES posts(id)
+                )
+                """
+            )
+        )
+        conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS idx_post_verification_status ON post_verification(status)"
+            )
+        )
+        conn.commit()
+
+    def _migrate_v5(self, conn):
+        """Add structured planner fields to action tasks for richer execution UX."""
+        inspector = inspect(conn)
+        existing_columns = {
+            column["name"] for column in inspector.get_columns("action_tasks")
+        }
+
+        column_defs = {
+            "next_step": "TEXT",
+            "effort": "VARCHAR(20)",
+            "impact": "VARCHAR(20)",
+            "horizon": "VARCHAR(20)",
+        }
+
+        for column_name, column_type in column_defs.items():
+            if column_name in existing_columns:
+                continue
+            conn.execute(
+                text(
+                    f"ALTER TABLE action_tasks ADD COLUMN {column_name} {column_type}"
+                )
+            )
+
+        conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS idx_tasks_horizon ON action_tasks(horizon)"
+            )
+        )
+        conn.commit()
 
 
 def run_migrations():

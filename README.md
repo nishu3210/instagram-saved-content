@@ -16,7 +16,7 @@ An AI-powered local web app for turning Instagram saved posts into a searchable 
 - ✅ **Thread-safe status management** - No more race conditions in global state
 - ✅ **Proper service separation**:
   - `services/instagram_client.py` - Instagram API interactions
-  - `services/ai_analyzer.py` - AI analysis with Azure OpenAI
+  - `services/ai_analyzer.py` - AI analysis with Gemini 3.1 Flash-Lite plus Azure fallback
   - `services/rag_service.py` - Semantic search with FAISS
 - ✅ **Database migrations** - Proper schema versioning with `migrations.py`
 - ✅ **Custom JSON type** - Eliminates double-encoding bugs
@@ -37,7 +37,7 @@ An AI-powered local web app for turning Instagram saved posts into a searchable 
 ## What Works Today
 
 - Sync saved Instagram posts into a local database
-- Analyze posts with Azure OpenAI
+- Analyze posts with Gemini 3.1 Flash-Lite multimodal understanding
 - Browse posts by category, sentiment, and collection
 - Generate action tasks from saved content
 - Chat with your saved library using RAG search
@@ -232,7 +232,17 @@ INSTAGRAM_SESSIONID=your_session_id
 RAW_COOKIE=your_cookie_string
 USER_AGENT=your_user_agent
 
-# Azure OpenAI
+# Gemini analysis
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-3.1-flash-lite-preview
+
+# Grounded verification
+VERIFICATION_PROVIDER=tavily_gemini
+VERIFICATION_MODEL=gemini-3.1-flash-lite-preview
+VERIFICATION_API_KEY=
+TAVILY_API_KEY=your_tavily_api_key
+
+# Azure OpenAI (used for Oracle chat / fallback analysis)
 AZURE_OPENAI_API_KEY=your_key
 AZURE_OPENAI_API_BASE=https://your-resource.openai.azure.com/
 AZURE_OPENAI_API_VERSION=2024-08-01-preview

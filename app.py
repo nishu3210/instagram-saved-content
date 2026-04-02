@@ -8,30 +8,44 @@ import uuid
 import warnings
 from datetime import datetime, timedelta, timezone
 from io import StringIO
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import browser_cookie3
 import pandas as pd
 import requests
-from flask import Flask, Response, jsonify, request, send_file
+from flask import Flask, Response, abort, jsonify, request, send_file
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
+from sqlalchemy import or_
 
 from config import config
-from database import ActionTask, Analysis, Conversation, Message, Post, db, get_db_uri
+from database import (
+    ActionTask,
+    Analysis,
+    Conversation,
+    Message,
+    Post,
+    PostVerification,
+    WorkspaceProfile,
+    db,
+    get_db_uri,
+)
 from migrations import run_migrations
 from schemas import (
     AnalysisRequest,
     BatchAnalysisRequest,
     ChatRequest,
     InstagramAuthRequest,
+    ProfileSettingsRequest,
     PostsFilterRequest,
     TaskBootstrapRequest,
     TaskCreateRequest,
     TaskUpdateRequest,
     TasksFilterRequest,
+    VerificationRequest,
 )
 from services.ai_analyzer import AIAnalyzer
 from services.instagram_client import (
@@ -39,7 +53,9 @@ from services.instagram_client import (
     InstagramAuthError,
     InstagramClient,
 )
+from services.planner_service import PlannerService
 from services.rag_service import RAGService
+from services.verification_service import VerificationService, VerificationServiceError
 from status_manager import analysis_status, task_job_status
 
 # Setup logging
@@ -108,6 +124,9 @@ CORS(
 # Initialize services
 rag_service = RAGService()
 ai_analyzer = AIAnalyzer()
+verification_service = VerificationService()
+planner_service = PlannerService()
+frontend_index_file = Path(app.static_folder or "static") / "app" / "index.html"
 
 # Auth storage (per-session)
 auth_storage = threading.local()
@@ -153,6 +172,33 @@ def normalize_priority(value: Optional[int]) -> int:
     return max(1, min(3, priority))
 
 
+def normalize_effort(value: Optional[str]) -> str:
+    """Normalize structured task effort."""
+    effort = str(value or "medium").strip().lower()
+    return effort if effort in {"quick", "medium", "deep"} else "medium"
+
+
+def normalize_impact(value: Optional[str]) -> str:
+    """Normalize structured task impact."""
+    impact = str(value or "medium").strip().lower()
+    return impact if impact in {"low", "medium", "high"} else "medium"
+
+
+def normalize_horizon(value: Optional[str]) -> str:
+    """Normalize structured task horizon."""
+    horizon = str(value or "this_week").strip().lower()
+    return horizon if horizon in {"today", "this_week", "later"} else "this_week"
+
+
+def coerce_utc_datetime(value: Optional[datetime]) -> Optional[datetime]:
+    """Treat naive datetimes as UTC for consistent comparisons."""
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
 def serialize_status(manager) -> Dict[str, Any]:
     """Serialize thread-safe status manager output."""
     status = manager.get_status()
@@ -173,7 +219,155 @@ def build_ai_analyzer(data: Optional[Dict[str, Any]] = None) -> AIAnalyzer:
         azure_key=data.get("azure_key") or config.azure.api_key,
         model=data.get("model") or config.azure.model,
         api_version=config.azure.api_version,
+        gemini_api_key=data.get("gemini_api_key") or config.gemini.api_key,
+        gemini_model=data.get("gemini_model") or config.gemini.model,
     )
+
+
+def prepare_raw_analysis_payload(result: Dict[str, Any], tokens_used: int) -> str:
+    """Store normalized analysis plus token usage."""
+    payload = dict(result)
+    payload["tokens_used"] = tokens_used
+    return json.dumps(payload, ensure_ascii=False)
+
+
+def save_analysis_for_post(post: Post, result: Dict[str, Any], tokens_used: int) -> Analysis:
+    """Create or update the structured analysis for a post."""
+    analysis = post.analysis or Analysis(post_id=post.id)
+    analysis.category = result["category"]
+    analysis.sentiment_score = result["sentiment"]["score"]
+    analysis.sentiment_label = result["sentiment"]["label"]
+    analysis.credibility_score = result.get("credibility_score")
+    analysis.topics = result.get("topics", [])
+    analysis.learning_points = result.get("learning_points", [])
+    analysis.action_items = result.get("action_items", [])
+    analysis.raw_analysis = prepare_raw_analysis_payload(result, tokens_used)
+    analysis.ocr_text = result.get("ocr_text")
+    analysis.video_transcript = result.get("video_transcript")
+    analysis.visual_description = result.get("visual_description")
+    analysis.video_summary = result.get("video_summary")
+    db.session.add(analysis)
+    return analysis
+
+
+def analyze_existing_post(post: Post, data: Optional[Dict[str, Any]] = None) -> Analysis:
+    """Analyze an existing stored post when verification or batch flows need it."""
+    if post.analysis:
+        return post.analysis
+
+    analyzer = build_ai_analyzer(data)
+    if not analyzer.is_available():
+        raise ValueError("No analysis model credentials are configured")
+
+    result, tokens = analyzer.analyze_post(post.to_dict())
+    if not result:
+        raise ValueError("Analysis failed for this post")
+
+    analysis = save_analysis_for_post(post, result, tokens)
+    db.session.commit()
+    rag_service.index_posts([post])
+    return analysis
+
+
+def build_system_overview() -> Dict[str, Any]:
+    """Summarize analysis and verification health from the database."""
+    total_posts = Post.query.count()
+    analysis_count = Analysis.query.count()
+    verification_count = PostVerification.query.filter_by(status="completed").count()
+    rag_stats = rag_service.get_stats()
+    index_vector_count = int(rag_stats.get("index_vector_count", rag_stats.get("total_indexed", 0)) or 0)
+    index_metadata_count = int(rag_stats.get("index_metadata_count", 0) or 0)
+    placeholder_post_count = Post.query.filter(Post.caption.like("Post by %")).count()
+    integrity_warnings: List[str] = []
+    if rag_stats.get("index_integrity_warning"):
+        integrity_warnings.append(str(rag_stats["index_integrity_warning"]))
+    if index_metadata_count != analysis_count:
+        integrity_warnings.append(
+            "Indexed metadata count does not match analyzed post rows in the database."
+        )
+
+    stale_data_detected = bool(index_vector_count > 0 and analysis_count == 0) or bool(
+        placeholder_post_count and analysis_count == 0
+    )
+    stale_data_warning = None
+    if stale_data_detected:
+        stale_data_warning = (
+            "Persisted RAG/index artifacts exist without matching structured analysis rows. "
+            "Use fresh analysis or rebuild the index before trusting profile, chat, or task generation."
+        )
+        integrity_warnings.append(stale_data_warning)
+
+    verification_coverage = (
+        round((verification_count / analysis_count) * 100, 1) if analysis_count else 0.0
+    )
+    index_integrity_warning = " ".join(dict.fromkeys(integrity_warnings)) if integrity_warnings else None
+
+    return {
+        "total_posts": total_posts,
+        "analysis_count": analysis_count,
+        "analyzed_count": analysis_count,
+        "verification_count": verification_count,
+        "verification_coverage": verification_coverage,
+        "embedded_count": index_vector_count,
+        "index_vector_count": index_vector_count,
+        "index_metadata_count": index_metadata_count,
+        "index_integrity_status": "warning" if index_integrity_warning else "ok",
+        "index_integrity_warning": index_integrity_warning,
+        "placeholder_post_count": placeholder_post_count,
+        "stale_data_detected": stale_data_detected,
+        "stale_data_warning": stale_data_warning,
+    }
+
+
+def get_recent_analyzed_posts(limit: int = 30) -> List[Post]:
+    """Get analyzed posts from the last 30 days, with a recent fallback."""
+    threshold = datetime.now(timezone.utc) - timedelta(days=30)
+    recent_posts = (
+        Post.query.join(Analysis)
+        .filter(Post.timestamp != None, Post.timestamp >= threshold)
+        .order_by(Post.timestamp.desc())
+        .limit(limit)
+        .all()
+    )
+    if recent_posts:
+        return recent_posts
+    return (
+        Post.query.join(Analysis)
+        .order_by(Post.timestamp.is_(None), Post.timestamp.desc(), Post.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+
+def get_workspace_profile() -> WorkspaceProfile:
+    """Load or create the singleton workspace profile."""
+    profile = WorkspaceProfile.get_singleton()
+    db.session.flush()
+    return profile
+
+
+def refresh_workspace_profile_snapshot(
+    data: Optional[Dict[str, Any]] = None,
+) -> WorkspaceProfile:
+    """Regenerate and persist the psychometric profile snapshot."""
+    posts_data = []
+    for post in Post.query.join(Analysis).all():
+        analysis = post.analysis.to_dict() if post.analysis else {}
+        posts_data.append(analysis)
+
+    if not posts_data:
+        raise ValueError("No analyzed posts found")
+
+    profile_data = build_ai_analyzer(data).generate_psychometric_profile(posts_data)
+    if not profile_data:
+        raise ValueError("Failed to generate profile")
+
+    workspace_profile = get_workspace_profile()
+    workspace_profile.psychometric_profile = profile_data
+    workspace_profile.profile_refreshed_at = datetime.now(timezone.utc)
+    db.session.add(workspace_profile)
+    db.session.commit()
+    return workspace_profile
 
 
 def build_analysis_results() -> Dict[str, Any]:
@@ -228,6 +422,17 @@ def build_analysis_results() -> Dict[str, Any]:
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "model_used": config.azure.model,
     }
+
+
+def suggested_due_date_for_horizon(horizon: str, due_days: int) -> Optional[datetime]:
+    """Assign a reasonable due date from planner horizon."""
+    now = datetime.now(timezone.utc)
+    normalized = normalize_horizon(horizon)
+    if normalized == "today":
+        return datetime(now.year, now.month, now.day, 18, 0, tzinfo=timezone.utc)
+    if normalized == "this_week":
+        return now + timedelta(days=min(max(due_days, 1), 7))
+    return now + timedelta(days=max(due_days, 14))
 
 
 def task_source_key(post_id: Optional[str], title: str) -> str:
@@ -297,12 +502,32 @@ def health():
 @app.route("/api/config", methods=["GET"])
 def get_config():
     """Get public configuration."""
+    analysis_provider = ""
+    analysis_model = ""
+    if config.gemini.is_configured():
+        analysis_provider = "gemini"
+        analysis_model = config.gemini.model
+    elif config.azure.is_configured():
+        analysis_provider = "azure"
+        analysis_model = config.azure.model
+
     return jsonify(
         {
+            "analysis_provider": analysis_provider,
+            "analysis_model": analysis_model,
             "azure_endpoint": config.azure.endpoint or "",
             "has_azure_key": bool(config.azure.api_key),
             "max_posts": config.app.max_posts,
             "model": config.azure.model,
+            "gemini_model": config.gemini.model,
+            "has_gemini_key": bool(config.gemini.api_key),
+            "verification_provider": config.verification.provider,
+            "verification_model": config.verification.model,
+            "has_verification_key": bool(config.verification.api_key),
+            "has_tavily_key": bool(config.verification.tavily_api_key),
+            "verification_max_claims": config.verification.max_claims,
+            "verification_max_sources": config.verification.max_sources,
+            "verification_providers": verification_service.get_provider_names(),
         }
     )
 
@@ -312,19 +537,41 @@ def get_config():
 @limiter.exempt
 def get_status():
     """Get analysis status."""
-    return jsonify(serialize_status(analysis_status))
+    payload = serialize_status(analysis_status)
+    payload["system"] = build_system_overview()
+    return jsonify(payload)
 
 
 @app.route("/api/tasks/status", methods=["GET"])
 @limiter.exempt
 def get_task_status():
     """Get task job status."""
-    return jsonify(serialize_status(task_job_status))
+    payload = serialize_status(task_job_status)
+    payload["system"] = build_system_overview()
+    return jsonify(payload)
 
 
 @app.route("/", methods=["GET"])
 def index():
     """Serve the main UI."""
+    if frontend_index_file.exists():
+        return send_file(frontend_index_file)
+    return send_file("index-ui.html")
+
+
+@app.route("/legacy", methods=["GET"])
+def legacy_index():
+    """Serve the legacy single-file UI explicitly."""
+    return send_file("index-ui.html")
+
+
+@app.route("/<path:path>", methods=["GET"])
+def spa_fallback(path: str):
+    """Serve the built SPA for client-side routes while leaving APIs untouched."""
+    if path.startswith("api/"):
+        abort(404)
+    if frontend_index_file.exists():
+        return send_file(frontend_index_file)
     return send_file("index-ui.html")
 
 
@@ -333,8 +580,8 @@ def index():
 def get_stats():
     """Get analysis statistics."""
     try:
-        total_posts = Post.query.count()
-        analyzed_count = Analysis.query.count()
+        overview = build_system_overview()
+        analyzed_count = overview["analysis_count"]
 
         # Average sentiment
         avg_sentiment = (
@@ -349,7 +596,7 @@ def get_stats():
             .all()
         ):
             if cat:
-                categories[cat.title()] = categories.get(cat.title(), 0) + count
+                categories[cat] = categories.get(cat, 0) + count
 
         # Sentiment distribution
         sentiments = {"Positive": 0, "Neutral": 0, "Negative": 0}
@@ -366,14 +613,10 @@ def get_stats():
             else:
                 sentiments["Neutral"] += count
 
-        # RAG stats
-        rag_stats = rag_service.get_stats()
-
         return jsonify(
             {
-                "total_posts": total_posts,
+                **overview,
                 "analyzed_count": analyzed_count,
-                "embedded_count": rag_stats["total_indexed"],
                 "avg_sentiment": round(float(avg_sentiment), 2),
                 "categories": categories,
                 "sentiments": sentiments,
@@ -462,7 +705,7 @@ def test_azure():
     try:
         payload = request.get_json() or {}
         analyzer = build_ai_analyzer(payload)
-        if not analyzer.is_available():
+        if analyzer.client is None:
             return jsonify({"success": False, "error": "Azure OpenAI credentials are not configured"}), 400
 
         ok, message = analyzer.validate_chat_deployment()
@@ -484,23 +727,44 @@ def get_posts():
             category=request.args.get("category", "all"),
             collection=request.args.get("collection", "all"),
             sentiment=request.args.get("sentiment", "all"),
+            verification=request.args.get("verification", "all"),
         )
 
         query = Post.query
-
+        analysis_joined = False
         # Apply filters
         if filters.category != "all":
-            query = query.join(Analysis).filter(Analysis.category == filters.category)
+            query = query.join(Analysis)
+            analysis_joined = True
+            query = query.filter(Analysis.category == filters.category)
 
         if filters.sentiment != "all":
-            if filters.category == "all":
+            if not analysis_joined:
                 query = query.join(Analysis)
+                analysis_joined = True
             query = query.filter(Analysis.sentiment_label == filters.sentiment)
 
         if filters.collection != "all":
             query = query.filter(Post.collections.contains(filters.collection))
 
+        if filters.verification != "all":
+            query = query.outerjoin(PostVerification)
+            if filters.verification == "verified":
+                query = query.filter(PostVerification.status == "completed")
+            elif filters.verification == "failed":
+                query = query.filter(PostVerification.status == "failed")
+            elif filters.verification == "unverified":
+                query = query.filter(
+                    or_(
+                        PostVerification.id == None,
+                        PostVerification.status == "pending",
+                    )
+                )
+
         # Apply sorting
+        if filters.sort in {"sentiment_desc", "sentiment_asc"} and not analysis_joined:
+            query = query.outerjoin(Analysis)
+            analysis_joined = True
         sort_options = {
             "newest": Post.timestamp.desc(),
             "oldest": Post.timestamp.asc(),
@@ -530,6 +794,151 @@ def get_posts():
     except Exception as e:
         logger.error(f"Posts error: {e}")
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/admin/refresh-categories", methods=["POST"])
+def refresh_categories():
+    """Reclassify stored analyses using saved text fields only."""
+    try:
+        analyzer = build_ai_analyzer(request.get_json() or {})
+        if not analyzer.is_available():
+            raise ValueError("No analysis model credentials are configured")
+
+        analyses = (
+            Analysis.query.join(Post)
+            .order_by(Post.timestamp.is_(None), Post.timestamp.desc(), Post.created_at.desc())
+            .all()
+        )
+        refreshed = 0
+        for analysis in analyses:
+            post = analysis.post
+            if post is None:
+                continue
+            classification = analyzer.classify_saved_content(
+                post.to_dict(),
+                {
+                    "ocr_text": analysis.ocr_text,
+                    "video_transcript": analysis.video_transcript,
+                    "visual_description": analysis.visual_description,
+                    "video_summary": analysis.video_summary,
+                },
+            )
+            if not classification:
+                continue
+            analysis.category = classification["category"]
+            analysis.topics = classification["topics"]
+            if analysis.raw_analysis:
+                try:
+                    payload = json.loads(analysis.raw_analysis)
+                except (TypeError, ValueError, json.JSONDecodeError):
+                    payload = {}
+                payload["category"] = analysis.category
+                payload["topics"] = analysis.topics
+                analysis.raw_analysis = json.dumps(payload, ensure_ascii=False)
+            db.session.add(analysis)
+            refreshed += 1
+
+        db.session.commit()
+        return jsonify(
+            {
+                "status": "completed",
+                "refreshed_count": refreshed,
+                "analysis_count": Analysis.query.count(),
+            }
+        )
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Category refresh error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/posts/<post_id>/verification", methods=["GET"])
+def get_post_verification(post_id: str):
+    """Return the latest verification report for a post."""
+    post = db.session.get(Post, post_id)
+    if post is None:
+        return jsonify({"error": "Post not found"}), 404
+    if post.verification is None:
+        return jsonify({"error": "Verification not found"}), 404
+    return jsonify(post.verification.to_dict())
+
+
+@app.route("/api/posts/<post_id>/verify", methods=["POST"])
+def verify_post(post_id: str):
+    """Run grounded verification for a single post."""
+    post = db.session.get(Post, post_id)
+    if post is None:
+        return jsonify({"error": "Post not found"}), 404
+    if (
+        not post.analysis
+        and post.caption
+        and post.caption.startswith("Post by ")
+        and not post.thumbnail_url
+        and not post.media_url
+    ):
+        return (
+            jsonify(
+                {
+                    "error": (
+                        "This post only has recovered index metadata. Sync or import real post data "
+                        "before trying to analyze or verify it."
+                    )
+                }
+            ),
+            400,
+        )
+
+    try:
+        data = VerificationRequest(**(request.get_json() or {})).model_dump(
+            exclude_none=True
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+    verification = post.verification or PostVerification(post_id=post.id, provider="", status="pending")
+    db.session.add(verification)
+
+    try:
+        analysis = analyze_existing_post(post, data)
+        report = verification_service.verify_post(post, analysis, data)
+        verification.provider = report["provider"]
+        verification.model = report["model"]
+        verification.status = report["status"]
+        verification.verdict = report["verdict"]
+        verification.confidence = report["confidence"]
+        verification.claims = report["claims"]
+        verification.source_links = report["source_links"]
+        verification.evidence_summary = report["evidence_summary"]
+        verification.raw_report = report["raw_report"]
+        verification.last_error = None
+        db.session.add(verification)
+        db.session.commit()
+        return jsonify(verification.to_dict())
+    except (ValueError, VerificationServiceError) as e:
+        db.session.rollback()
+        verification = PostVerification.query.filter_by(post_id=post.id).first() or PostVerification(post_id=post.id)
+        settings = verification_service.build_settings(data)
+        verification.provider = settings.provider or config.verification.provider
+        verification.model = settings.model or config.verification.model
+        verification.status = "failed"
+        verification.last_error = str(e)
+        verification.raw_report = None
+        db.session.add(verification)
+        db.session.commit()
+        return jsonify({"error": str(e), "verification": verification.to_dict()}), 400
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Verification error for {post_id}: {e}")
+        verification = PostVerification.query.filter_by(post_id=post.id).first() or PostVerification(post_id=post.id)
+        settings = verification_service.build_settings(data)
+        verification.provider = settings.provider or config.verification.provider
+        verification.model = settings.model or config.verification.model
+        verification.status = "failed"
+        verification.last_error = str(e)
+        verification.raw_report = None
+        db.session.add(verification)
+        db.session.commit()
+        return jsonify({"error": str(e), "verification": verification.to_dict()}), 500
 
 
 @app.route("/api/admin/import-analysis-cache", methods=["POST"])
@@ -592,7 +1001,10 @@ def import_analysis_cache():
                 analysis.video_transcript = analysis_data.get("video_transcript")
                 analysis.visual_description = analysis_data.get("visual_description")
                 analysis.video_summary = analysis_data.get("video_summary")
-                analysis.raw_analysis = json.dumps(analysis_data, ensure_ascii=False)
+                analysis.raw_analysis = prepare_raw_analysis_payload(
+                    analysis_data,
+                    int(analysis_data.get("tokens_used", 0) or 0),
+                )
 
         db.session.commit()
 
@@ -671,7 +1083,7 @@ def run_analysis_job(data: Dict[str, Any]):
         analysis_status.start("Initializing...")
         analyzer = build_ai_analyzer(data)
         if not analyzer.is_available():
-            raise ValueError("Azure OpenAI credentials are not configured")
+            raise ValueError("No analysis model credentials are configured")
 
         # Validate Instagram connection
         client = InstagramClient(
@@ -745,22 +1157,7 @@ def run_analysis_job(data: Dict[str, Any]):
             total_tokens += tokens
 
             if result:
-                analysis = Analysis(
-                    post_id=post.id,
-                    category=result["category"],
-                    sentiment_score=result["sentiment"]["score"],
-                    sentiment_label=result["sentiment"]["label"],
-                    credibility_score=result.get("credibility_score"),
-                    topics=result.get("topics", []),
-                    learning_points=result.get("learning_points", []),
-                    action_items=result.get("action_items", []),
-                    raw_analysis=json.dumps(result, ensure_ascii=False),
-                    ocr_text=result.get("ocr_text"),
-                    video_transcript=result.get("video_transcript"),
-                    visual_description=result.get("visual_description"),
-                    video_summary=result.get("video_summary"),
-                )
-                db.session.add(analysis)
+                save_analysis_for_post(post, result, tokens)
                 db.session.commit()
                 analyzed_count += 1
 
@@ -893,10 +1290,10 @@ def analyze_batch():
         data = BatchAnalysisRequest(**(request.get_json() or {})).model_dump()
         analyzer = build_ai_analyzer(data)
         if not analyzer.is_available():
-            raise ValueError("Azure OpenAI credentials are not configured")
-        deployment_ok, deployment_message = analyzer.validate_chat_deployment()
+            raise ValueError("No analysis model credentials are configured")
+        deployment_ok, deployment_message = analyzer.validate_analysis_backend()
         if not deployment_ok:
-            raise ValueError(f"Azure deployment error: {deployment_message}")
+            raise ValueError(f"Analysis backend error: {deployment_message}")
 
         analysis_status.start("Analyzing posts...")
         query = Post.query.filter(Post.analysis == None)
@@ -919,29 +1316,14 @@ def analyze_batch():
                 failed_count += 1
                 continue
 
-            analysis = Analysis(
-                post_id=post.id,
-                category=result["category"],
-                sentiment_score=result["sentiment"]["score"],
-                sentiment_label=result["sentiment"]["label"],
-                credibility_score=result.get("credibility_score"),
-                topics=result.get("topics", []),
-                learning_points=result.get("learning_points", []),
-                action_items=result.get("action_items", []),
-                raw_analysis=json.dumps(result, ensure_ascii=False),
-                ocr_text=result.get("ocr_text"),
-                video_transcript=result.get("video_transcript"),
-                visual_description=result.get("visual_description"),
-                video_summary=result.get("video_summary"),
-            )
-            db.session.add(analysis)
+            save_analysis_for_post(post, result, tokens)
             analyzed_count += 1
 
         db.session.commit()
         rag_service.index_posts(Post.query.filter(Post.analysis != None).all())
         if total_posts > 0 and analyzed_count == 0:
             raise ValueError(
-                "Analysis failed for all posts. Check Azure deployment name and model compatibility in Settings."
+                "Analysis failed for all posts. Check your Gemini/Azure analysis configuration in Settings."
             )
         analysis_status.complete(
             results={
@@ -961,19 +1343,61 @@ def analyze_batch():
 
 @app.route("/api/profile", methods=["GET"])
 def get_profile():
-    """Generate psychometric profile from analyzed posts."""
-    posts_data = []
-    for post in Post.query.join(Analysis).all():
-        analysis = post.analysis.to_dict() if post.analysis else {}
-        posts_data.append(analysis)
+    """Return the persisted psychometric profile snapshot."""
+    try:
+        workspace_profile = get_workspace_profile()
+        if not workspace_profile.psychometric_profile:
+            workspace_profile = refresh_workspace_profile_snapshot()
+        return jsonify(workspace_profile.psychometric_profile)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 404
+    except Exception as e:
+        logger.error(f"Profile error: {e}")
+        return jsonify({"error": str(e)}), 500
 
-    if not posts_data:
-        return jsonify({"error": "No analyzed posts found"}), 404
 
-    profile = build_ai_analyzer().generate_psychometric_profile(posts_data)
-    if not profile:
-        return jsonify({"error": "Failed to generate profile"}), 500
-    return jsonify(profile)
+@app.route("/api/profile/refresh", methods=["POST"])
+def refresh_profile():
+    """Regenerate and persist the psychometric profile snapshot."""
+    try:
+        data = request.get_json() or {}
+        workspace_profile = refresh_workspace_profile_snapshot(data)
+        return jsonify(workspace_profile.to_dict())
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 404
+    except Exception as e:
+        logger.error(f"Profile refresh error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/profile-settings", methods=["GET"])
+def get_profile_settings():
+    """Return manual goals, priorities, and the saved profile snapshot."""
+    try:
+        workspace_profile = get_workspace_profile()
+        db.session.commit()
+        return jsonify(workspace_profile.to_dict())
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/profile-settings", methods=["PUT"])
+def update_profile_settings():
+    """Persist manual goals and priorities."""
+    try:
+        data = ProfileSettingsRequest(**(request.get_json() or {})).model_dump()
+        workspace_profile = get_workspace_profile()
+        workspace_profile.manual_goals = data["manual_goals"]
+        workspace_profile.priorities = data["priorities"]
+        workspace_profile.constraints = data["constraints"]
+        workspace_profile.focus_areas = data["focus_areas"]
+        db.session.add(workspace_profile)
+        db.session.commit()
+        return jsonify(workspace_profile.to_dict())
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 400
 
 
 @app.route("/api/results", methods=["GET"])
@@ -1266,8 +1690,12 @@ def create_task():
             post_id=data.get("post_id"),
             title=data["title"],
             notes=data.get("notes"),
+            next_step=data.get("next_step"),
             status=normalize_status(data.get("status")),
             priority=normalize_priority(data.get("priority")),
+            effort=normalize_effort(data.get("effort")),
+            impact=normalize_impact(data.get("impact")),
+            horizon=normalize_horizon(data.get("horizon")),
             due_date=parse_iso_datetime(data.get("due_date")),
             scheduled_for=parse_iso_datetime(data.get("scheduled_for")),
             source=data.get("source") or "manual",
@@ -1296,8 +1724,16 @@ def update_task(task_id: int):
             task.title = data["title"]
         if "notes" in data:
             task.notes = data["notes"]
+        if "next_step" in data:
+            task.next_step = data["next_step"]
         if "priority" in data:
             task.priority = normalize_priority(data["priority"])
+        if "effort" in data:
+            task.effort = normalize_effort(data["effort"])
+        if "impact" in data:
+            task.impact = normalize_impact(data["impact"])
+        if "horizon" in data:
+            task.horizon = normalize_horizon(data["horizon"])
         if "due_date" in data:
             task.due_date = parse_iso_datetime(data["due_date"])
         if "scheduled_for" in data:
@@ -1359,12 +1795,20 @@ def task_stats():
 def today_plan():
     """Return top tasks for today."""
     max_items = min(request.args.get("max_items", 3, type=int), 10)
-    tasks = (
-        ActionTask.query.filter(ActionTask.status.in_(["pending", "in_progress"]))
-        .order_by(ActionTask.priority.desc(), ActionTask.due_date.asc(), ActionTask.created_at.asc())
-        .limit(max_items)
-        .all()
-    )
+    tasks = ActionTask.query.filter(
+        ActionTask.status.in_(["pending", "in_progress"])
+    ).all()
+    tasks = sorted(
+        tasks,
+        key=lambda task: (
+            {"today": 0, "this_week": 1, "later": 2}.get(task.horizon or "later", 3),
+            -int(task.priority or 0),
+            coerce_utc_datetime(task.due_date)
+            or datetime.max.replace(tzinfo=timezone.utc),
+            coerce_utc_datetime(task.created_at)
+            or datetime.max.replace(tzinfo=timezone.utc),
+        ),
+    )[:max_items]
     return jsonify(
         {
             "plan": [task.to_dict() for task in tasks],
@@ -1376,41 +1820,52 @@ def today_plan():
 
 @app.route("/api/tasks/bootstrap", methods=["POST"])
 def bootstrap_tasks():
-    """Create tasks from analyzed action items."""
+    """Create goal-aware tasks from recent analyzed content."""
     status = task_job_status.get_status()
     if status.running:
         return jsonify({"error": "Task generation already running"}), 400
     try:
         data = TaskBootstrapRequest(**(request.get_json() or {})).model_dump()
         task_job_status.start("Generating tasks...")
-        due_date = datetime.now(timezone.utc) + timedelta(days=data["due_days"])
+        task_job_status.update_progress(15, "Loading goals and recent content...")
+        workspace_profile = get_workspace_profile()
+        posts = get_recent_analyzed_posts(limit=30)
+        suggestions = planner_service.generate_tasks(
+            workspace_profile,
+            posts,
+            limit=data["limit"],
+        )
+
+        task_job_status.update_progress(60, "Saving prioritized tasks...")
         created = 0
-        for post in Post.query.join(Analysis).all():
-            for action_item in post.analysis.action_items or []:
-                source_key = task_source_key(post.id, action_item)
-                if ActionTask.query.filter_by(source_key=source_key).first():
-                    continue
-                db.session.add(
-                    ActionTask(
-                        post_id=post.id,
-                        title=action_item,
-                        notes=f"Source: @{post.username}",
-                        status="pending",
-                        priority=2,
-                        due_date=due_date,
-                        source="ai",
-                        source_key=source_key,
-                    )
+        for suggestion in suggestions:
+            source_key = task_source_key(suggestion.get("post_id"), suggestion["title"])
+            if ActionTask.query.filter_by(source_key=source_key).first():
+                continue
+            db.session.add(
+                ActionTask(
+                    post_id=suggestion.get("post_id"),
+                    title=suggestion["title"],
+                    notes=suggestion.get("notes"),
+                    next_step=suggestion.get("next_step"),
+                    status="pending",
+                    priority=normalize_priority(suggestion.get("priority")),
+                    effort=normalize_effort(suggestion.get("effort")),
+                    impact=normalize_impact(suggestion.get("impact")),
+                    horizon=normalize_horizon(suggestion.get("horizon")),
+                    due_date=suggested_due_date_for_horizon(
+                        suggestion.get("horizon"), data["due_days"]
+                    ),
+                    source="goal_planner",
+                    source_key=source_key,
+                    evidence_text=suggestion.get("evidence_text"),
                 )
-                created += 1
-                if created >= data["limit"]:
-                    break
-            if created >= data["limit"]:
-                break
+            )
+            created += 1
         db.session.commit()
         task_job_status.complete(
-            results={"created_count": created},
-            message=f"Task generation complete! Created {created} tasks.",
+            results={"created_count": created, "suggestion_count": len(suggestions)},
+            message=f"Task generation complete! Created {created} goal-aware tasks.",
         )
         return jsonify({"status": "completed", "created_count": created})
     except Exception as e:

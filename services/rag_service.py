@@ -212,8 +212,19 @@ class RAGService:
 
     def get_stats(self) -> Dict:
         """Get RAG statistics."""
+        index_vector_count = self.index.ntotal if self.index else 0
+        metadata_count = len(self.posts_metadata)
+        integrity_warnings = []
+        if index_vector_count != metadata_count:
+            integrity_warnings.append(
+                "FAISS vector count does not match indexed metadata rows."
+            )
         return {
-            "total_indexed": self.index.ntotal if self.index else 0,
+            "total_indexed": index_vector_count,
+            "index_vector_count": index_vector_count,
+            "index_metadata_count": metadata_count,
+            "index_integrity_status": "warning" if integrity_warnings else "ok",
+            "index_integrity_warning": " ".join(integrity_warnings) if integrity_warnings else None,
             "dimension": self.dimension,
             "model": self.embedding_model,
         }

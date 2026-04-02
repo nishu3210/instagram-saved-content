@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
 
     <!-- Libraries -->
@@ -25,15 +25,15 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
+                        sans: ['Manrope', 'sans-serif'],
+                        mono: ['IBM Plex Mono', 'monospace'],
                     },
                     colors: {
                         midnight: '#0f172a',
                         surface: '#1e293b',
-                        accent: '#7c3aed',
-                        cyan: '#06b6d4',
-                        rose: '#f43f5e'
+                        accent: '#f97316',
+                        cyan: '#22d3ee',
+                        rose: '#fb7185'
                     }
                 }
             }
@@ -42,20 +42,21 @@
 
     <style>
         :root {
-            --bg-1: #07111f;
-            --bg-2: #0f172a;
-            --bg-3: #132238;
+            --bg-1: #08111e;
+            --bg-2: #0c1729;
+            --bg-3: #13263d;
             --line: rgba(255, 255, 255, 0.08);
             --line-strong: rgba(255, 255, 255, 0.16);
             --text-soft: #94a3b8;
             --text-muted: #64748b;
-            --accent-warm: #f59e0b;
+            --accent-warm: #f97316;
+            --accent-cool: #22d3ee;
         }
 
         body {
             background:
-                radial-gradient(circle at top left, rgba(6, 182, 212, 0.12), transparent 28%),
-                radial-gradient(circle at top right, rgba(124, 58, 237, 0.18), transparent 32%),
+                radial-gradient(circle at top left, rgba(34, 211, 238, 0.12), transparent 28%),
+                radial-gradient(circle at top right, rgba(249, 115, 22, 0.16), transparent 32%),
                 linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 45%, var(--bg-3) 100%);
             color: #f8fafc;
             overflow-x: hidden;
@@ -88,7 +89,7 @@
         }
 
         .text-gradient {
-            background: linear-gradient(135deg, #a78bfa 0%, #2dd4bf 100%);
+            background: linear-gradient(135deg, #fb923c 0%, #67e8f9 100%);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -146,6 +147,54 @@
             border: 1px solid var(--line);
             border-radius: 1.5rem;
             padding: 1.25rem;
+        }
+
+        .metric-card {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(180deg, rgba(8, 15, 29, 0.96), rgba(15, 23, 42, 0.72));
+            border: 1px solid var(--line);
+            border-radius: 1.5rem;
+            padding: 1.25rem;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(34, 211, 238, 0.12), transparent 45%, rgba(249, 115, 22, 0.12));
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        .metric-card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .insight-banner {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            padding: 1rem 1.1rem;
+            border-radius: 1.25rem;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            background: rgba(8, 15, 29, 0.72);
+        }
+
+        .insight-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-radius: 999px;
+            padding: 0.5rem 0.85rem;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            background: rgba(15, 23, 42, 0.72);
+            color: #cbd5e1;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
         }
 
         .signal-pill {
@@ -220,11 +269,98 @@
         }
 
         .field-shell input,
-        .field-shell select {
+        .field-shell select,
+        .field-shell textarea {
             background: transparent;
             border: none;
             outline: none;
             width: 100%;
+        }
+
+        .filter-shell {
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            background: rgba(8, 15, 29, 0.82);
+            border-radius: 0.9rem;
+            padding: 0.65rem 0.85rem;
+            color: #e2e8f0;
+        }
+
+        .gallery-card {
+            background: linear-gradient(180deg, rgba(8, 15, 29, 0.98), rgba(15, 23, 42, 0.78));
+            border: 1px solid rgba(148, 163, 184, 0.14);
+            border-radius: 1.5rem;
+            overflow: hidden;
+            transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+        }
+
+        .gallery-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(34, 211, 238, 0.25);
+            box-shadow: 0 28px 80px rgba(2, 6, 23, 0.34);
+        }
+
+        .tag-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.38rem 0.7rem;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            background: rgba(15, 23, 42, 0.78);
+            color: #cbd5e1;
+            font-size: 0.72rem;
+            line-height: 1;
+        }
+
+        .task-lane {
+            border: 1px solid rgba(148, 163, 184, 0.14);
+            border-radius: 1.5rem;
+            background: rgba(8, 15, 29, 0.7);
+            padding: 1rem;
+        }
+
+        .task-card {
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            border-radius: 1.2rem;
+            background: rgba(15, 23, 42, 0.82);
+            padding: 1rem;
+        }
+
+        .task-meta-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.35rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .task-meta-chip.generated {
+            background: rgba(34, 211, 238, 0.12);
+            color: #67e8f9;
+            border: 1px solid rgba(34, 211, 238, 0.2);
+        }
+
+        .task-meta-chip.manual {
+            background: rgba(249, 115, 22, 0.12);
+            color: #fdba74;
+            border: 1px solid rgba(249, 115, 22, 0.2);
+        }
+
+        .line-clamp-3 {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .line-clamp-4 {
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         .section-kicker {
@@ -368,22 +504,33 @@
                             <p class="mt-5 text-lg text-slate-300 max-w-2xl">Sync what you saved, analyze what matters, extract action items, and ask Oracle when you need recall instead of scrolling.</p>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="command-card">
+                        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                            <div class="metric-card">
                                 <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-2">Library</p>
                                 <p id="heroTotalPosts" class="text-3xl font-bold text-white">0</p>
                                 <p class="text-sm text-slate-400 mt-2">Saved posts currently tracked in your system.</p>
                             </div>
-                            <div class="command-card">
-                                <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-2">Analysis Coverage</p>
-                                <p id="heroCoverage" class="text-3xl font-bold text-cyan-300">0%</p>
-                                <p class="text-sm text-slate-400 mt-2">How much of your library is already usable by search and chat.</p>
+                            <div class="metric-card">
+                                <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-2">Analyzed</p>
+                                <p id="heroAnalyzedPosts" class="text-3xl font-bold text-cyan-300">0</p>
+                                <p class="text-sm text-slate-400 mt-2">Structured rows in SQL that power category, search, and planning.</p>
                             </div>
-                            <div class="command-card">
+                            <div class="metric-card">
+                                <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-2">Verified</p>
+                                <p id="heroVerifiedPosts" class="text-3xl font-bold text-emerald-300">0</p>
+                                <p class="text-sm text-slate-400 mt-2">Posts with a completed grounded verification report.</p>
+                            </div>
+                            <div class="metric-card">
                                 <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-2">Execution Load</p>
                                 <p id="heroOpenTasks" class="text-3xl font-bold text-amber-300">0</p>
                                 <p class="text-sm text-slate-400 mt-2">Open tasks generated from your saved content and manual planning.</p>
                             </div>
+                        </div>
+
+                        <div class="insight-banner">
+                            <span id="analysisCoveragePill" class="insight-chip">0% analyzed</span>
+                            <span id="verificationCoveragePill" class="insight-chip">0% verified</span>
+                            <span id="searchVolumePill" class="insight-chip">0 search vectors</span>
                         </div>
 
                         <div class="flex flex-wrap gap-3">
@@ -452,18 +599,31 @@
                     <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-transparent pointer-events-none">
                     </div>
                     <div>
-                        <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">System Status
+                        <div class="flex items-center justify-between gap-3 mb-2">
+                            <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Search Index Integrity
                         </h3>
+                            <span id="integrityStatusBadge" class="px-3 py-1 rounded-full bg-slate-800 text-slate-300 text-[11px] font-bold border border-slate-700">Checking</span>
+                        </div>
                         <div class="flex items-baseline gap-2">
                             <span id="indexedCountDisplay" class="text-4xl font-bold text-white">0</span>
-                            <span class="text-sm text-slate-500">posts indexed for RAG</span>
+                            <span class="text-sm text-slate-500">vectors in semantic search</span>
                         </div>
                     </div>
-                    <div class="mt-6 space-y-3">
-                        <div class="flex justify-between text-sm mb-2">
-                            <span class="text-cyan-400">Analyzed</span>
-                            <span id="analyzedCountDisplay" class="font-bold text-white">0</span>
-                        </div>
+                        <div class="mt-6 space-y-4">
+                            <div class="grid grid-cols-3 gap-3 text-sm">
+                                <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-3">
+                                    <p class="text-[11px] uppercase tracking-[0.18em] text-slate-500 mb-1">DB Analyses</p>
+                                    <p id="analyzedCountDisplay" class="font-bold text-white text-lg">0</p>
+                                </div>
+                                <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-3">
+                                    <p class="text-[11px] uppercase tracking-[0.18em] text-slate-500 mb-1">Index Metadata</p>
+                                    <p id="indexMetadataCountDisplay" class="font-bold text-white text-lg">0</p>
+                                </div>
+                                <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-3">
+                                    <p class="text-[11px] uppercase tracking-[0.18em] text-slate-500 mb-1">Verified</p>
+                                    <p id="verifiedCountDisplay" class="font-bold text-white text-lg">0</p>
+                                </div>
+                            </div>
                         <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
                             <div id="indexBar" class="bg-cyan-400 h-full rounded-full w-0 transition-all duration-1000">
                             </div>
@@ -472,6 +632,7 @@
                             class="w-full mt-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs rounded-lg font-medium transition-colors border border-slate-700">
                             🧠 Rebuild RAG Index
                         </button>
+                        <p id="systemWarning" class="text-xs text-amber-300 leading-6 hidden"></p>
                     </div>
                 </div>
             </div>
@@ -483,24 +644,31 @@
             <div class="flex flex-col md:flex-row justify-between gap-4 glass p-4 rounded-2xl sticky top-20 z-40">
                 <div class="flex gap-4 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
                     <select id="sortFilter" onchange="loadPosts(1)"
-                        class="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg px-4 py-2">
+                        class="filter-shell text-sm">
                         <option value="newest">Newest First</option>
                         <option value="oldest">Oldest First</option>
                     </select>
                     <select id="categoryFilter" onchange="loadPosts(1)"
-                        class="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg px-4 py-2">
+                        class="filter-shell text-sm">
                         <option value="all">All Categories</option>
                     </select>
                     <select id="collectionFilter" onchange="loadPosts(1)"
-                        class="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg px-4 py-2">
+                        class="filter-shell text-sm">
                         <option value="all">All Collections</option>
                     </select>
                     <select id="sentimentFilter" onchange="loadPosts(1)"
-                        class="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg px-4 py-2">
+                        class="filter-shell text-sm">
                         <option value="all">All Sentiments</option>
                         <option value="Positive">Positive</option>
                         <option value="Neutral">Neutral</option>
                         <option value="Negative">Negative</option>
+                    </select>
+                    <select id="verificationFilter" onchange="loadPosts(1)"
+                        class="filter-shell text-sm">
+                        <option value="all">All Verification</option>
+                        <option value="verified">Verified</option>
+                        <option value="unverified">Not Verified</option>
+                        <option value="failed">Verification Failed</option>
                     </select>
                 </div>
                 <div class="flex gap-2">
@@ -510,6 +678,9 @@
                     <button onclick="analyzeBatch()"
                         class="px-4 py-2 bg-accent hover:bg-accent/90 text-white text-sm rounded-lg font-medium transition-colors">✨
                         Analyze</button>
+                    <button onclick="refreshCategories()"
+                        class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm rounded-lg font-medium transition-colors border border-slate-700">🏷
+                        Refresh Categories</button>
                 </div>
             </div>
 
@@ -559,7 +730,7 @@
                 <div class="flex flex-col md:flex-row justify-between gap-3">
                     <div>
                         <h3 class="text-lg font-bold text-white">Today’s Execution Plan</h3>
-                        <p class="text-sm text-slate-400">The smallest set of tasks that will move your saved ideas into action.</p>
+                        <p class="text-sm text-slate-400">A goal-aware shortlist with the why, next step, effort, and likely payoff visible at a glance.</p>
                     </div>
                     <div class="flex gap-2">
                         <button onclick="bootstrapTasks()"
@@ -570,7 +741,7 @@
                             Plan</button>
                     </div>
                 </div>
-                <div id="todayPlanList" class="space-y-3"></div>
+                <div id="todayPlanList" class="grid grid-cols-1 xl:grid-cols-3 gap-4"></div>
             </div>
 
             <div class="glass rounded-2xl p-6">
@@ -606,7 +777,7 @@
                         </select>
                     </div>
                 </div>
-                <div id="tasksList" class="space-y-3"></div>
+                <div id="tasksList" class="space-y-6"></div>
                 <div class="flex justify-center items-center gap-3">
                     <button onclick="changeTaskPage(-1)" id="prevTaskPageBtn" disabled
                         class="px-3 py-2 bg-slate-800 text-white rounded-lg disabled:opacity-50">← Prev</button>
@@ -719,7 +890,7 @@
 
                 <!-- Azure Config -->
                 <div class="glass p-8 rounded-3xl">
-                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">🤖 Azure OpenAI Config</h2>
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">🤖 Azure Chat / Fallback Config</h2>
                     <div class="space-y-4">
                         <div class="grid grid-cols-2 gap-4">
                             <div>
@@ -745,12 +916,104 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <button onclick="testAzureConfig()"
                                 class="w-full py-3 bg-white text-midnight font-bold rounded-xl hover:bg-slate-200 transition-all">🧪
-                                Test Azure</button>
+                                Test Azure Chat</button>
                             <div class="rounded-xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm text-slate-400">
                                 Use the exact Azure deployment name here, not the base model family name.
                             </div>
                         </div>
-                        <p class="text-xs text-slate-500">If the server already has an Azure key, you can leave the API key blank and use the server-side secret.</p>
+                        <p class="text-xs text-slate-500">Gemini 3.1 Flash-Lite is the primary reel analysis model when configured on the server. Azure is kept for Oracle chat and as an optional fallback analysis backend.</p>
+                    </div>
+                </div>
+
+                <div class="glass p-8 rounded-3xl">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">🌐 Verification Provider</h2>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Provider</label>
+                                <div class="field-shell px-3 py-3">
+                                    <select id="verification_provider" class="w-full bg-transparent text-white">
+                                        <option value="tavily_gemini">tavily_gemini</option>
+                                        <option value="openai">openai</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Model</label>
+                                <div class="field-shell px-3 py-3">
+                                    <input type="text" id="verification_model">
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-2">LLM API Key</label>
+                            <div class="field-shell px-3 py-3">
+                                <input type="password" id="verification_api_key" placeholder="Optional if the server already has the Gemini/OpenAI key">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Tavily Search API Key</label>
+                            <div class="field-shell px-3 py-3">
+                                <input type="password" id="tavily_api_key" placeholder="Required for tavily_gemini unless the server env already has it">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Max Claims</label>
+                                <div class="field-shell px-3 py-3">
+                                    <input type="number" id="verification_max_claims" min="1" max="10" value="5">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Max Sources</label>
+                                <div class="field-shell px-3 py-3">
+                                    <input type="number" id="verification_max_sources" min="1" max="10" value="5">
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500">Use <span class="font-semibold text-slate-300">tavily_gemini</span> to search with Tavily and synthesize the verdict with Gemini. Verification runs on demand per reel/post and stores only the latest report.</p>
+                    </div>
+                </div>
+
+                <div class="glass p-8 rounded-3xl">
+                    <div class="flex items-center justify-between gap-3 mb-6">
+                        <div>
+                            <h2 class="text-xl font-bold flex items-center gap-2">🎯 Goals & Priorities</h2>
+                            <p class="text-sm text-slate-400 mt-2">These guide task generation so the app can map saved content to what actually matters right now.</p>
+                        </div>
+                        <button onclick="saveProfileSettings()"
+                            class="px-4 py-2 bg-white text-midnight rounded-xl font-bold hover:bg-slate-200 transition-colors">Save Goals</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Manual Goals</label>
+                            <div class="field-shell px-3 py-3">
+                                <textarea id="manual_goals" rows="5" class="w-full bg-transparent text-white resize-none" placeholder="One goal per line"></textarea>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Current Priorities</label>
+                            <div class="field-shell px-3 py-3">
+                                <textarea id="priorities" rows="5" class="w-full bg-transparent text-white resize-none" placeholder="One priority per line"></textarea>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Constraints</label>
+                            <div class="field-shell px-3 py-3">
+                                <textarea id="constraints" rows="4" class="w-full bg-transparent text-white resize-none" placeholder="Time, energy, budget, or focus constraints"></textarea>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Focus Areas</label>
+                            <div class="field-shell px-3 py-3">
+                                <textarea id="focus_areas" rows="4" class="w-full bg-transparent text-white resize-none" placeholder="Themes you want the planner to favor"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-3 mt-4">
+                        <button onclick="refreshProfile()" id="refreshProfileBtn"
+                            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-semibold transition-colors border border-slate-700">Refresh Psychometric Snapshot</button>
+                        <span id="profileSettingsMeta" class="text-xs text-slate-500 self-center">Goals will sync into the local workspace profile.</span>
                     </div>
                 </div>
 
@@ -774,6 +1037,9 @@
                             class="w-full py-3 bg-white text-midnight font-bold rounded-xl hover:bg-slate-200 transition-all">Import
                             Cached Analysis</button>
                     </div>
+                    <button onclick="refreshCategories()"
+                        class="w-full mt-3 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all border border-slate-700">Refresh
+                        Categories & Tags</button>
                     <button onclick="importIndexedMetadata()"
                         class="w-full mt-3 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all border border-slate-700">Restore
                         Indexed Posts</button>
@@ -792,6 +1058,19 @@
         </div>
     </div>
 
+    <div id="verificationModal" class="fixed inset-0 bg-black/80 z-[100] hidden items-center justify-center p-6">
+        <div class="glass rounded-3xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between gap-4 px-6 py-5 border-b border-slate-800">
+                <div>
+                    <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Grounded Verification</p>
+                    <h3 id="verificationModalTitle" class="text-xl font-bold text-white">Verification Details</h3>
+                </div>
+                <button onclick="closeVerificationModal()" class="px-3 py-2 bg-slate-800 text-white rounded-lg border border-slate-700">Close</button>
+            </div>
+            <div id="verificationModalBody" class="overflow-y-auto p-6 space-y-5 text-sm text-slate-300"></div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div id="toastContainer" class="toast-container"></div>
 
@@ -805,6 +1084,7 @@
         let conversationId = null;
         let charts = {};
         let latestStats = null;
+        let latestConfig = null;
         let statusPollTimer = null;
 
         // --- Navigation ---
@@ -841,7 +1121,13 @@
                 browser: document.getElementById('browserSelect').value,
                 azure_endpoint: document.getElementById('azure_endpoint').value.trim(),
                 azure_key: document.getElementById('azure_key').value.trim(),
-                model: document.getElementById('model').value.trim()
+                model: document.getElementById('model').value.trim(),
+                verification_provider: document.getElementById('verification_provider').value,
+                verification_model: document.getElementById('verification_model').value.trim(),
+                verification_api_key: document.getElementById('verification_api_key').value.trim(),
+                tavily_api_key: document.getElementById('tavily_api_key').value.trim(),
+                verification_max_claims: document.getElementById('verification_max_claims').value,
+                verification_max_sources: document.getElementById('verification_max_sources').value
             };
         }
 
@@ -864,6 +1150,12 @@
                 if (state.azure_endpoint) document.getElementById('azure_endpoint').value = state.azure_endpoint;
                 if (state.azure_key) document.getElementById('azure_key').value = state.azure_key;
                 if (state.model) document.getElementById('model').value = state.model;
+                if (state.verification_provider) document.getElementById('verification_provider').value = state.verification_provider;
+                if (state.verification_model) document.getElementById('verification_model').value = state.verification_model;
+                if (state.verification_api_key) document.getElementById('verification_api_key').value = state.verification_api_key;
+                if (state.tavily_api_key) document.getElementById('tavily_api_key').value = state.tavily_api_key;
+                if (state.verification_max_claims) document.getElementById('verification_max_claims').value = state.verification_max_claims;
+                if (state.verification_max_sources) document.getElementById('verification_max_sources').value = state.verification_max_sources;
             } catch (e) {
                 console.log('Saved setup load failed', e);
             }
@@ -871,10 +1163,14 @@
 
         function clearSavedSetup() {
             localStorage.removeItem(LOCAL_SETUP_KEY);
-            ['sessionid', 'raw_cookie', 'user_agent', 'azure_endpoint', 'azure_key'].forEach(id => {
+            ['sessionid', 'raw_cookie', 'user_agent', 'azure_endpoint', 'azure_key', 'verification_api_key', 'tavily_api_key'].forEach(id => {
                 document.getElementById(id).value = '';
             });
             document.getElementById('model').value = 'DeepSeek-V3.2';
+            document.getElementById('verification_model').value = 'gemini-3.1-flash-lite-preview';
+            document.getElementById('verification_provider').value = 'tavily_gemini';
+            document.getElementById('verification_max_claims').value = 5;
+            document.getElementById('verification_max_sources').value = 5;
             showToast('Local setup cleared', 'info');
             updateOnboardingUI();
         }
@@ -883,6 +1179,8 @@
             const state = getSetupState();
             const hasInstagram = Boolean(state.sessionid || state.raw_cookie);
             const hasAzure = Boolean(state.azure_endpoint && (state.azure_key || document.getElementById('azure_key').placeholder));
+            const hasGemini = Boolean(latestConfig?.has_gemini_key);
+            const hasAnalysisBackend = hasGemini || hasAzure;
             const hasPosts = Boolean((latestStats?.total_posts || 0) > 0);
             const hasAnalysis = Boolean((latestStats?.analyzed_count || 0) > 0);
 
@@ -895,9 +1193,13 @@
                     handler: "switchTab('settings')"
                 },
                 {
-                    done: hasAzure,
-                    title: 'Connect Azure OpenAI',
-                    detail: hasAzure ? 'AI analysis is configured.' : 'Add endpoint and key, or rely on the server-side key.',
+                    done: hasAnalysisBackend,
+                    title: 'Connect Analysis Model',
+                    detail: hasGemini
+                        ? `Gemini analysis is configured (${latestConfig?.analysis_model || latestConfig?.gemini_model || 'Gemini 3.1 Flash-Lite'}).`
+                        : hasAzure
+                            ? 'Azure chat and fallback analysis are configured.'
+                            : 'Add Gemini via server env, or configure Azure as a fallback.',
                     action: 'Review AI Setup',
                     handler: "switchTab('settings')"
                 },
@@ -936,7 +1238,7 @@
 
             const signalDot = document.getElementById('systemSignalDot');
             const signalLabel = document.getElementById('systemSignalLabel');
-            if (!hasInstagram || !hasAzure) {
+            if (!hasInstagram || !hasAnalysisBackend) {
                 signalDot.className = 'signal-dot warn';
                 signalLabel.textContent = 'Setup incomplete';
             } else if (!hasAnalysis) {
@@ -948,7 +1250,7 @@
             }
 
             const primaryActionBtn = document.getElementById('primaryActionBtn');
-            if (!hasInstagram || !hasAzure) {
+            if (!hasInstagram || !hasAnalysisBackend) {
                 primaryActionBtn.textContent = 'Start Setup';
             } else if (!hasPosts) {
                 primaryActionBtn.textContent = 'Sync Library';
@@ -963,10 +1265,12 @@
             const state = getSetupState();
             const hasInstagram = Boolean(state.sessionid || state.raw_cookie);
             const hasAzure = Boolean(state.azure_endpoint && (state.azure_key || document.getElementById('azure_key').placeholder));
+            const hasGemini = Boolean(latestConfig?.has_gemini_key);
+            const hasAnalysisBackend = hasGemini || hasAzure;
             const hasPosts = Boolean((latestStats?.total_posts || 0) > 0);
             const hasAnalysis = Boolean((latestStats?.analyzed_count || 0) > 0);
 
-            if (!hasInstagram || !hasAzure) return switchTab('settings');
+            if (!hasInstagram || !hasAnalysisBackend) return switchTab('settings');
             if (!hasPosts) return syncLibrary();
             if (!hasAnalysis) return analyzeBatch();
             switchTab('chat');
@@ -977,6 +1281,7 @@
             document.getElementById('categoryFilter').value = 'all';
             document.getElementById('collectionFilter').value = 'all';
             document.getElementById('sentimentFilter').value = 'all';
+            document.getElementById('verificationFilter').value = 'all';
             loadPosts(1);
         }
 
@@ -1054,10 +1359,92 @@
             steps.innerHTML = preset.steps.map(step => `<li class="flex gap-2"><span class="text-cyan-300">•</span><span>${escapeHtml(step)}</span></li>`).join('');
         }
 
+        function parseMultilineInput(id) {
+            return document.getElementById(id).value
+                .split('\n')
+                .map(item => item.trim())
+                .filter(Boolean);
+        }
+
+        function renderProfileCard(profile) {
+            const snapshot = profile?.psychometric_profile || profile;
+            if (!snapshot) return;
+
+            document.getElementById('userArchetype').textContent = snapshot.archetype || 'The Unrevealed Persona';
+            document.getElementById('userOneLiner').textContent = snapshot.one_liner || 'Your saved content profile is ready.';
+
+            const traits = [
+                ...(snapshot.traits || []),
+                ...(snapshot.growth_areas || []).map(area => `Growth: ${area}`)
+            ].slice(0, 4);
+            const grid = document.getElementById('traitsGrid');
+            if (!traits.length) {
+                grid.classList.add('hidden');
+                grid.innerHTML = '';
+                return;
+            }
+
+            grid.classList.remove('hidden');
+            grid.innerHTML = traits.map(trait => `
+                <div class="rounded-2xl border border-slate-700 bg-slate-950/50 p-4">
+                    <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-2">Signal</p>
+                    <p class="text-white font-semibold">${escapeHtml(trait)}</p>
+                </div>
+            `).join('');
+        }
+
+        async function loadProfileSettings() {
+            try {
+                const res = await fetch(`${API_BASE}/profile-settings`);
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                document.getElementById('manual_goals').value = (data.manual_goals || []).join('\n');
+                document.getElementById('priorities').value = (data.priorities || []).join('\n');
+                document.getElementById('constraints').value = (data.constraints || []).join('\n');
+                document.getElementById('focus_areas').value = (data.focus_areas || []).join('\n');
+                document.getElementById('profileSettingsMeta').textContent = data.profile_refreshed_at
+                    ? `Profile refreshed ${new Date(data.profile_refreshed_at).toLocaleString()}`
+                    : 'No psychometric snapshot saved yet.';
+                if (data.psychometric_profile) renderProfileCard(data);
+            } catch (e) {
+                console.log('Profile settings load failed', e);
+            }
+        }
+
+        async function saveProfileSettings(showFeedback = true) {
+            try {
+                const payload = {
+                    manual_goals: parseMultilineInput('manual_goals'),
+                    priorities: parseMultilineInput('priorities'),
+                    constraints: parseMultilineInput('constraints'),
+                    focus_areas: parseMultilineInput('focus_areas')
+                };
+
+                const res = await fetch(`${API_BASE}/profile-settings`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                document.getElementById('profileSettingsMeta').textContent = data.profile_refreshed_at
+                    ? `Profile refreshed ${new Date(data.profile_refreshed_at).toLocaleString()}`
+                    : 'Goals saved to the local workspace.';
+                if (showFeedback) showToast('Goals saved', 'success');
+                return data;
+            } catch (e) {
+                showToast('Saving goals failed: ' + e.message, 'error');
+                throw e;
+            }
+        }
+
         // --- Init ---
         async function init() {
             loadSavedSetup();
             await loadConfig();
+            await loadProfileSettings();
             await loadStats();
             await loadTaskStats();
             await loadTodayPlan();
@@ -1070,11 +1457,26 @@
             try {
                 const res = await fetch(`${API_BASE}/config`);
                 const data = await res.json();
+                latestConfig = data;
                 if (data.azure_endpoint) document.getElementById('azure_endpoint').value = data.azure_endpoint;
                 if (data.model && !document.getElementById('model').value) document.getElementById('model').value = data.model;
                 if (data.has_azure_key && !document.getElementById('azure_key').value) {
                     document.getElementById('azure_key').placeholder = 'Using server-side environment key';
                 }
+                if (Array.isArray(data.verification_providers) && data.verification_providers.length) {
+                    const select = document.getElementById('verification_provider');
+                    select.innerHTML = data.verification_providers.map(provider => `<option value="${provider}">${provider}</option>`).join('');
+                }
+                if (data.verification_provider) document.getElementById('verification_provider').value = data.verification_provider;
+                if (data.verification_model && !document.getElementById('verification_model').value) document.getElementById('verification_model').value = data.verification_model;
+                if (data.has_verification_key && !document.getElementById('verification_api_key').value) {
+                    document.getElementById('verification_api_key').placeholder = 'Using server-side environment key';
+                }
+                if (data.has_tavily_key && !document.getElementById('tavily_api_key').value) {
+                    document.getElementById('tavily_api_key').placeholder = 'Using server-side Tavily key';
+                }
+                if (data.verification_max_claims) document.getElementById('verification_max_claims').value = data.verification_max_claims;
+                if (data.verification_max_sources) document.getElementById('verification_max_sources').value = data.verification_max_sources;
                 updateOnboardingUI();
             } catch (e) { console.log('Config load failed'); }
         }
@@ -1085,15 +1487,37 @@
                 const stats = await res.json();
                 latestStats = stats;
 
-                document.getElementById('postsCountBadge').textContent = `${stats.total_posts} POSTS SAVED`;
-                document.getElementById('indexedCountDisplay').textContent = stats.embedded_count || 0;
-                document.getElementById('analyzedCountDisplay').textContent = stats.analyzed_count || 0;
-                document.getElementById('heroTotalPosts').textContent = stats.total_posts || 0;
-                document.getElementById('heroOpenTasks').textContent = document.getElementById('taskOpenCount').textContent || 0;
+                const analysisCoverage = stats.total_posts > 0 ? (stats.analysis_count / stats.total_posts) * 100 : 0;
+                const verificationCoverage = stats.analysis_count > 0 ? (stats.verification_count / stats.analysis_count) * 100 : 0;
 
-                const pct = stats.total_posts > 0 ? (stats.analyzed_count / stats.total_posts) * 100 : 0;
-                document.getElementById('heroCoverage').textContent = `${Math.round(pct)}%`;
-                document.getElementById('indexBar').style.width = `${pct}%`;
+                document.getElementById('postsCountBadge').textContent = `${stats.total_posts || 0} saved • ${stats.analysis_count || 0} analyzed • ${stats.verification_count || 0} verified`;
+                document.getElementById('indexedCountDisplay').textContent = stats.index_vector_count || 0;
+                document.getElementById('indexMetadataCountDisplay').textContent = stats.index_metadata_count || 0;
+                document.getElementById('analyzedCountDisplay').textContent = stats.analysis_count || 0;
+                document.getElementById('verifiedCountDisplay').textContent = stats.verification_count || 0;
+                document.getElementById('heroTotalPosts').textContent = stats.total_posts || 0;
+                document.getElementById('heroAnalyzedPosts').textContent = stats.analysis_count || 0;
+                document.getElementById('heroVerifiedPosts').textContent = stats.verification_count || 0;
+                document.getElementById('heroOpenTasks').textContent = document.getElementById('taskOpenCount').textContent || 0;
+                document.getElementById('analysisCoveragePill').textContent = `${Math.round(analysisCoverage)}% analyzed`;
+                document.getElementById('verificationCoveragePill').textContent = `${Math.round(verificationCoverage)}% verified`;
+                document.getElementById('searchVolumePill').textContent = `${stats.index_vector_count || 0} search vectors`;
+                document.getElementById('indexBar').style.width = `${Math.min(100, Math.round(analysisCoverage))}%`;
+
+                const integrityBadge = document.getElementById('integrityStatusBadge');
+                integrityBadge.textContent = stats.index_integrity_status === 'warning' ? 'Needs rebuild' : 'Healthy';
+                integrityBadge.className = `px-3 py-1 rounded-full text-[11px] font-bold border ${stats.index_integrity_status === 'warning'
+                    ? 'bg-amber-500/15 text-amber-300 border-amber-500/20'
+                    : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/20'}`;
+
+                const warningEl = document.getElementById('systemWarning');
+                if (stats.index_integrity_warning || stats.stale_data_warning) {
+                    warningEl.textContent = stats.index_integrity_warning || stats.stale_data_warning;
+                    warningEl.classList.remove('hidden');
+                } else {
+                    warningEl.textContent = '';
+                    warningEl.classList.add('hidden');
+                }
 
                 initCharts(stats);
                 renderFilters(stats.categories);
@@ -1112,7 +1536,7 @@
                     labels: ['Negative', 'Neutral', 'Positive'],
                     datasets: [{
                         data: [stats.sentiments?.Negative || 0, stats.sentiments?.Neutral || 0, stats.sentiments?.Positive || 0],
-                        backgroundColor: ['#f43f5e', '#94a3b8', '#10b981'],
+                        backgroundColor: ['#fb7185', '#94a3b8', '#34d399'],
                         borderRadius: 8, barThickness: 40
                     }]
                 },
@@ -1124,7 +1548,7 @@
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(stats.categories || {}),
-                    datasets: [{ data: Object.values(stats.categories || {}), backgroundColor: ['#7c3aed', '#06b6d4', '#f472b6', '#3b82f6', '#10b981', '#f59e0b'], borderWidth: 0 }]
+                    datasets: [{ data: Object.values(stats.categories || {}), backgroundColor: ['#f97316', '#22d3ee', '#0ea5e9', '#38bdf8', '#f59e0b', '#34d399', '#f472b6', '#a78bfa'], borderWidth: 0 }]
                 },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '70%' }
             });
@@ -1155,8 +1579,9 @@
                 const cat = document.getElementById('categoryFilter').value;
                 const collection = document.getElementById('collectionFilter').value;
                 const sent = document.getElementById('sentimentFilter').value;
+                const verification = document.getElementById('verificationFilter').value;
 
-                const res = await fetch(`${API_BASE}/posts?page=${page}&per_page=50&sort=${sort}&category=${cat}&collection=${collection}&sentiment=${sent}`);
+                const res = await fetch(`${API_BASE}/posts?page=${page}&per_page=50&sort=${sort}&category=${encodeURIComponent(cat)}&collection=${encodeURIComponent(collection)}&sentiment=${encodeURIComponent(sent)}&verification=${encodeURIComponent(verification)}`);
                 const data = await res.json();
 
                 currentPage = data.current_page || 1;
@@ -1188,37 +1613,59 @@
             empty.classList.add('hidden');
             grid.innerHTML = posts.map(p => {
                 const analysis = p.analysis || {};
+                const verification = p.verification || null;
                 const sentimentLabel = analysis.sentiment?.label || analysis.sentiment_label || '';
                 const category = analysis.category || 'Uncategorized';
                 const username = escapeHtml(p.username || 'unknown');
-                const caption = escapeHtml((p.caption || '').substring(0, 100));
+                const caption = escapeHtml((p.caption || '').trim());
+                const summary = escapeHtml((analysis.video_summary || analysis.visual_description || p.caption || '').trim().substring(0, 220));
                 const shortcode = escapeHtml(p.shortcode || '');
                 const collections = (p.collections || []).map(escapeHtml);
+                const tags = (analysis.topics || []).slice(0, 4).map(escapeHtml);
+                const verificationLabel = verification
+                    ? (verification.status === 'completed'
+                        ? `Verified • ${(verification.verdict || 'completed').replaceAll('_', ' ')}`
+                        : verification.status === 'failed'
+                            ? 'Verification failed'
+                            : 'Verification pending')
+                    : 'Not verified';
+                const verificationBadge = verification
+                    ? `<button onclick="event.stopPropagation(); openVerificationModal('${escapeHtml(p.id)}')" class="px-2.5 py-1.5 rounded-full text-[11px] font-bold ${verification.status === 'completed' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20' : verification.status === 'failed' ? 'bg-rose-500/15 text-rose-300 border border-rose-500/20' : 'bg-slate-800 text-slate-300 border border-slate-700'}">${escapeHtml(verificationLabel)}</button>`
+                    : '<span class="px-2.5 py-1.5 rounded-full text-[11px] font-bold bg-slate-800 text-slate-400 border border-slate-700">Not verified</span>';
                 const proxyImage = p.thumbnail_url
                     ? `${API_BASE}/media-proxy?shortcode=${encodeURIComponent(p.shortcode || '')}&url=${encodeURIComponent(p.thumbnail_url)}`
                     : '';
                 return `
-                <div class="glass rounded-2xl overflow-hidden hover:translate-y-[-5px] transition-transform duration-300 group cursor-pointer stagger-in" data-collection="${collections[0] || ''}" onclick="window.open('https://www.instagram.com/p/${shortcode}', '_blank')">
+                <div class="gallery-card group cursor-pointer stagger-in" data-collection="${collections[0] || ''}" onclick="window.open('https://www.instagram.com/p/${shortcode}', '_blank')">
                     <div class="relative h-48 bg-slate-800">
                         ${proxyImage ? `<img src="${proxyImage}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=No+Image'">` : '<div class="w-full h-full flex items-center justify-center text-slate-600">No Image</div>'}
                         <div class="absolute top-3 right-3">
-                             <span class="px-2 py-1 bg-black/60 backdrop-blur-md rounded text-xs font-bold text-white">${escapeHtml(category)}</span>
+                             <span class="px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-full text-xs font-bold text-white border border-white/10">${escapeHtml(category)}</span>
                         </div>
-                        <div class="absolute bottom-3 left-3 flex gap-2 text-xs text-white/80">
-                            <span>❤️ ${p.likes || 0}</span>
-                            <span>💬 ${p.comments || 0}</span>
+                        <div class="absolute bottom-3 left-3 flex gap-2 text-xs text-white/90">
+                            <span class="px-2 py-1 rounded-full bg-black/45 backdrop-blur-md">❤️ ${p.likes || 0}</span>
+                            <span class="px-2 py-1 rounded-full bg-black/45 backdrop-blur-md">💬 ${p.comments || 0}</span>
                         </div>
                     </div>
-                    <div class="p-5">
-                        <div class="flex justify-between items-center mb-2">
-                             <span class="text-xs text-slate-400 font-mono">@${username}</span>
-                             <span class="text-xs font-bold ${sentimentLabel === 'Positive' ? 'text-green-400' : 'text-slate-400'}">${escapeHtml(sentimentLabel)}</span>
-                        </div>
-                        <p class="text-sm text-slate-300 line-clamp-2 font-light">${caption}...</p>
-                        ${collections.length ? `<div class="flex flex-wrap gap-2 mt-3">${collections.slice(0, 2).map(collection => `<span class="px-2 py-1 rounded-full bg-slate-800 text-[11px] text-slate-300 border border-slate-700">${collection}</span>`).join('')}</div>` : ''}
-                    </div>
-                </div>
-            `}).join('');
+	                    <div class="p-5 space-y-4">
+	                        <div class="flex justify-between items-center gap-3">
+	                             <span class="text-xs text-slate-400 font-mono">@${username}</span>
+	                             <span class="text-xs font-bold ${sentimentLabel === 'Positive' ? 'text-green-400' : sentimentLabel === 'Negative' ? 'text-rose-300' : 'text-slate-400'}">${escapeHtml(sentimentLabel || 'Neutral')}</span>
+	                        </div>
+                            <div class="space-y-2">
+                                <p class="text-base text-white font-semibold line-clamp-3">${summary || 'No summary available yet.'}</p>
+                                <p class="text-sm text-slate-400 line-clamp-3">${caption || 'No caption available.'}</p>
+                            </div>
+                            ${tags.length ? `<div class="flex flex-wrap gap-2">${tags.map(tag => `<span class="tag-pill">${tag}</span>`).join('')}</div>` : ''}
+                            <div class="flex items-center justify-between gap-2 mt-3">
+                                ${verificationBadge}
+                                <button onclick="event.stopPropagation(); verifyPost('${escapeHtml(p.id)}')"
+                                    class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs rounded-lg font-semibold border border-slate-700">${verification ? 'Re-verify' : 'Verify'}</button>
+                            </div>
+	                        ${collections.length ? `<div class="flex flex-wrap gap-2">${collections.slice(0, 2).map(collection => `<span class="tag-pill">${collection}</span>`).join('')}</div>` : ''}
+	                    </div>
+	                </div>
+	            `}).join('');
 
             const collectionSel = document.getElementById('collectionFilter');
             const currentCollection = collectionSel.value;
@@ -1279,7 +1726,7 @@
 
         async function testAzureConfig() {
             try {
-                showToast('Testing Azure deployment...', 'info');
+                showToast('Testing Azure chat deployment...', 'info');
                 const res = await fetch(`${API_BASE}/test-azure`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1294,7 +1741,7 @@
                     throw new Error(data.error || 'Azure validation failed');
                 }
                 saveSetup(false);
-                showToast(data.message || 'Azure deployment is valid', 'success');
+                showToast(data.message || 'Azure chat deployment is valid', 'success');
             } catch (e) {
                 showToast('Azure failed: ' + e.message, 'error');
             }
@@ -1377,6 +1824,29 @@
             } catch (e) { showToast('Analysis failed: ' + e.message, 'error'); }
         }
 
+        async function refreshCategories() {
+            try {
+                showToast('Refreshing categories and content-grounded tags...', 'info');
+                const setup = getSetupState();
+                const res = await fetch(`${API_BASE}/admin/refresh-categories`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        azure_endpoint: setup.azure_endpoint,
+                        azure_key: setup.azure_key,
+                        model: setup.model
+                    })
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                await loadStats();
+                await loadPosts(currentPage);
+                showToast(`Refreshed ${data.refreshed_count || 0} analyzed posts`, 'success');
+            } catch (e) {
+                showToast('Category refresh failed: ' + e.message, 'error');
+            }
+        }
+
         async function pollProgress() {
             const interval = setInterval(async () => {
                 const res = await fetch(`${API_BASE}/status`);
@@ -1412,21 +1882,137 @@
         }
 
         // --- Psychometric Profile ---
-        async function generateProfile() {
+        async function refreshProfile() {
             const btn = document.getElementById('generateProfileBtn');
-            btn.innerHTML = '<span>🔮 Divining...</span>'; btn.disabled = true;
+            const settingsBtn = document.getElementById('refreshProfileBtn');
+            btn.innerHTML = '<span>🔮 Divining...</span>';
+            btn.disabled = true;
+            settingsBtn.disabled = true;
             try {
-                const res = await fetch(`${API_BASE}/profile`);
+                await saveProfileSettings(false);
+                const setup = getSetupState();
+                const res = await fetch(`${API_BASE}/profile/refresh`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        azure_endpoint: setup.azure_endpoint,
+                        azure_key: setup.azure_key,
+                        model: setup.model
+                    })
+                });
                 const data = await res.json();
                 if (data.error) throw new Error(data.error);
-                document.getElementById('userArchetype').textContent = data.archetype;
-                document.getElementById('userArchetype').className = 'text-5xl font-black tracking-tight mb-2 text-transparent bg-clip-text bg-gradient-to-r from-accent to-cyan-400';
-                document.getElementById('userOneLiner').textContent = `"${data.one_liner}"`;
-                const grid = document.getElementById('traitsGrid');
-                grid.innerHTML = data.traits.map(t => `<div class="bg-slate-800/50 p-4 rounded-xl border border-white/5 text-center"><span class="block text-accent text-lg mb-1">✦</span><span class="font-bold text-sm">${t}</span></div>`).join('');
-                grid.classList.remove('hidden');
-            } catch (e) { showToast('Profile failed: ' + e.message, 'error'); }
-            finally { btn.innerHTML = '<span>✨ Regenerate</span>'; btn.disabled = false; }
+                renderProfileCard(data);
+                await loadProfileSettings();
+                showToast('Psychometric snapshot refreshed', 'success');
+            } catch (e) {
+                showToast('Profile failed: ' + e.message, 'error');
+            } finally {
+                btn.innerHTML = '<span>✨ Refresh Profile</span>';
+                btn.disabled = false;
+                settingsBtn.disabled = false;
+            }
+        }
+
+        async function generateProfile() {
+            return refreshProfile();
+        }
+
+        async function verifyPost(postId) {
+            try {
+                saveSetup(false);
+                showToast('Running grounded verification...', 'info');
+                const setup = getSetupState();
+                const res = await fetch(`${API_BASE}/posts/${postId}/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        provider: setup.verification_provider,
+                        verification_model: setup.verification_model,
+                        verification_api_key: setup.verification_api_key,
+                        tavily_api_key: setup.tavily_api_key,
+                        max_claims: Number(setup.verification_max_claims || 5),
+                        max_sources: Number(setup.verification_max_sources || 5),
+                        azure_endpoint: setup.azure_endpoint,
+                        azure_key: setup.azure_key,
+                        model: setup.model
+                    })
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                await loadPosts(currentPage);
+                await loadStats();
+                showToast('Verification complete', 'success');
+                openVerificationModal(postId);
+            } catch (e) {
+                showToast('Verification failed: ' + e.message, 'error');
+            }
+        }
+
+        async function openVerificationModal(postId) {
+            try {
+                const res = await fetch(`${API_BASE}/posts/${postId}/verification`);
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                document.getElementById('verificationModalTitle').textContent = `Verification • ${data.verdict ? data.verdict.replaceAll('_', ' ') : 'latest run'}`;
+                document.getElementById('verificationModalBody').innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                            <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-2">Status</p>
+                            <p class="text-white font-semibold">${escapeHtml(data.status || 'unknown')}</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                            <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-2">Confidence</p>
+                            <p class="text-white font-semibold">${Math.round((data.confidence || 0) * 100)}%</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                            <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-2">Provider</p>
+                            <p class="text-white font-semibold">${escapeHtml(data.provider || 'unknown')} • ${escapeHtml(data.model || '')}</p>
+                        </div>
+                    </div>
+                    <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-5">
+                        <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-2">Evidence Summary</p>
+                        <p class="text-slate-200 leading-7">${escapeHtml(data.evidence_summary || 'No summary available')}</p>
+                    </div>
+                    <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-5">
+                        <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-4">Claims Reviewed</p>
+                        <div class="space-y-3">
+                            ${(data.claims || []).map(item => `
+                                <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+                                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                                        <span class="px-2 py-1 rounded-full text-[11px] font-bold bg-slate-800 text-slate-200 border border-slate-700">${escapeHtml((item.verdict || 'unknown').replaceAll('_', ' '))}</span>
+                                        <span class="text-xs text-slate-500">${Math.round((item.confidence || 0) * 100)}% confidence</span>
+                                    </div>
+                                    <p class="text-white font-medium">${escapeHtml(item.claim || '')}</p>
+                                    <p class="text-sm text-slate-400 mt-2">${escapeHtml(item.rationale || '')}</p>
+                                </div>
+                            `).join('') || '<p class="text-slate-400">No explicit factual claims were strong enough to verify.</p>'}
+                        </div>
+                    </div>
+                    <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-5">
+                        <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-4">Sources</p>
+                        <div class="space-y-2">
+                            ${(data.source_links || []).map(source => `
+                                <a class="block rounded-xl border border-slate-800 bg-slate-900/60 p-4 hover:bg-slate-900 transition-colors" href="${escapeHtml(source.url || '#')}" target="_blank" rel="noreferrer noopener">
+                                    <p class="text-white font-medium">${escapeHtml(source.title || source.url || 'Source')}</p>
+                                    <p class="text-xs text-slate-500 mt-1">${escapeHtml(source.publisher || source.url || '')}</p>
+                                </a>
+                            `).join('') || '<p class="text-slate-400">No source links saved for this run.</p>'}
+                        </div>
+                    </div>
+                    ${data.last_error ? `<div class="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-rose-200">${escapeHtml(data.last_error)}</div>` : ''}
+                `;
+                document.getElementById('verificationModal').classList.remove('hidden');
+                document.getElementById('verificationModal').classList.add('flex');
+            } catch (e) {
+                showToast('Verification details failed: ' + e.message, 'error');
+            }
+        }
+
+        function closeVerificationModal() {
+            const modal = document.getElementById('verificationModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
         }
 
         // --- Chat ---
@@ -1497,14 +2083,28 @@
                 }
 
                 planList.innerHTML = plan.map((task, idx) => `
-                    <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-700 flex items-start justify-between gap-4">
-                        <div>
-                            <p class="text-xs text-slate-500 mb-1">Priority ${idx + 1} • ${escapeHtml(task.status)}</p>
-                            <p class="text-white font-medium">${escapeHtml(task.title)}</p>
-                            <p class="text-xs text-slate-400 mt-1">Due: ${escapeHtml(formatDate(task.due_date))}</p>
+                    <div class="task-card">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="space-y-3">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="task-meta-chip ${task.source === 'goal_planner' ? 'generated' : 'manual'}">${task.source === 'goal_planner' ? 'AI Plan' : 'Manual'}</span>
+                                    <span class="task-meta-chip bg-slate-800 text-slate-200 border border-slate-700">${escapeHtml((task.horizon || 'later').replaceAll('_', ' '))}</span>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-slate-500 mb-1">Priority ${idx + 1} • ${escapeHtml(task.status)}</p>
+                                    <p class="text-white font-semibold text-lg">${escapeHtml(task.title)}</p>
+                                </div>
+                            </div>
+                            <button onclick="updateTaskStatus(${task.id}, 'done')"
+                                class="px-3 py-2 bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs rounded-lg">Mark Done</button>
                         </div>
-                        <button onclick="updateTaskStatus(${task.id}, 'done')"
-                            class="px-3 py-2 bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs rounded-lg">Mark Done</button>
+                        <div class="grid grid-cols-3 gap-2 mt-4">
+                            <span class="tag-pill">${escapeHtml(task.effort || 'medium')} effort</span>
+                            <span class="tag-pill">${escapeHtml(task.impact || 'medium')} impact</span>
+                            <span class="tag-pill">Due ${escapeHtml(formatDate(task.due_date))}</span>
+                        </div>
+                        ${task.next_step ? `<div class="mt-4 rounded-2xl border border-slate-800 bg-slate-950/50 p-4"><p class="text-[11px] uppercase tracking-[0.18em] text-slate-500 mb-2">Next Step</p><p class="text-sm text-slate-200">${escapeHtml(task.next_step)}</p></div>` : ''}
+                        ${task.evidence_text ? `<div class="mt-4"><p class="text-[11px] uppercase tracking-[0.18em] text-slate-500 mb-2">Why This Task</p><p class="text-sm text-slate-400 leading-6">${escapeHtml(task.evidence_text)}</p></div>` : ''}
                     </div>
                 `).join('');
             } catch (e) {
@@ -1536,30 +2136,68 @@
                 return;
             }
 
-            const now = new Date();
-            list.innerHTML = tasks.map(task => {
-                const due = task.due_date ? new Date(task.due_date) : null;
-                const overdue = due && due < now && !['done', 'archived'].includes(task.status);
-                return `
-                    <div class="p-4 rounded-xl bg-slate-900/60 border ${overdue ? 'border-rose-500/50' : 'border-slate-700'}">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="space-y-1">
-                                <p class="text-white font-medium">${escapeHtml(task.title)}</p>
-                                <p class="text-xs text-slate-400">Due: ${escapeHtml(formatDate(task.due_date))}</p>
-                                ${task.notes ? `<p class="text-xs text-slate-500">${escapeHtml(task.notes)}</p>` : ''}
+            const groups = {
+                today: tasks.filter(task => (task.horizon || 'later') === 'today'),
+                this_week: tasks.filter(task => (task.horizon || 'later') === 'this_week'),
+                later: tasks.filter(task => !task.horizon || task.horizon === 'later')
+            };
+
+            const labels = {
+                today: 'Today',
+                this_week: 'This Week',
+                later: 'Later'
+            };
+
+            list.innerHTML = Object.entries(groups)
+                .filter(([, groupTasks]) => groupTasks.length)
+                .map(([groupKey, groupTasks]) => `
+                    <section class="task-lane">
+                        <div class="flex items-center justify-between gap-3 mb-4">
+                            <div>
+                                <p class="text-[11px] uppercase tracking-[0.18em] text-slate-500 mb-1">Execution Horizon</p>
+                                <h4 class="text-xl font-bold text-white">${labels[groupKey]}</h4>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <select onchange="updateTaskStatus(${task.id}, this.value)"
-                                    class="bg-slate-800 border border-slate-600 text-white text-xs rounded px-2 py-1">
-                                    <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>Pending</option>
-                                    <option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
-                                    <option value="done" ${task.status === 'done' ? 'selected' : ''}>Done</option>
-                                </select>
+                            <span class="tag-pill">${groupTasks.length} task${groupTasks.length === 1 ? '' : 's'}</span>
+                        </div>
+                        <div class="space-y-3">
+                            ${groupTasks.map(task => renderTaskCard(task)).join('')}
+                        </div>
+                    </section>
+                `).join('');
+        }
+
+        function renderTaskCard(task) {
+            const due = task.due_date ? new Date(task.due_date) : null;
+            const overdue = due && due < new Date() && !['done', 'archived'].includes(task.status);
+            return `
+                <div class="task-card ${overdue ? 'border border-rose-500/40' : ''}">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="space-y-3 flex-1">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="task-meta-chip ${task.source === 'goal_planner' ? 'generated' : 'manual'}">${task.source === 'goal_planner' ? 'AI Suggested' : 'Manual'}</span>
+                                <span class="tag-pill">${escapeHtml(task.effort || 'medium')} effort</span>
+                                <span class="tag-pill">${escapeHtml(task.impact || 'medium')} impact</span>
+                                <span class="tag-pill">Priority ${escapeHtml(task.priority)}</span>
                             </div>
+                            <div>
+                                <p class="text-white font-semibold text-lg">${escapeHtml(task.title)}</p>
+                                <p class="text-xs text-slate-400 mt-1">Due ${escapeHtml(formatDate(task.due_date))}</p>
+                            </div>
+                            ${task.next_step ? `<div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-4"><p class="text-[11px] uppercase tracking-[0.18em] text-slate-500 mb-2">Next Step</p><p class="text-sm text-slate-200">${escapeHtml(task.next_step)}</p></div>` : ''}
+                            ${task.evidence_text ? `<div><p class="text-[11px] uppercase tracking-[0.18em] text-slate-500 mb-2">Why This Task</p><p class="text-sm text-slate-400 leading-6 max-w-3xl">${escapeHtml(task.evidence_text)}</p></div>` : ''}
+                            ${task.notes ? `<p class="text-sm text-slate-500">${escapeHtml(task.notes)}</p>` : ''}
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <select onchange="updateTaskStatus(${task.id}, this.value)"
+                                class="bg-slate-800 border border-slate-600 text-white text-xs rounded px-2 py-1">
+                                <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                <option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                                <option value="done" ${task.status === 'done' ? 'selected' : ''}>Done</option>
+                            </select>
                         </div>
                     </div>
-                `;
-            }).join('');
+                </div>
+            `;
         }
 
         function updateTaskPagination() {
